@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Youtube, Download } from "lucide-react";
+import { ExternalLink, Play, Download } from "lucide-react";
 import type { ATTool } from "@/lib/types";
 
 interface ResultsTableProps {
@@ -108,7 +108,7 @@ export function ResultsTable({ tools, onExportToSheets, isExporting }: ResultsTa
                             rel="noopener noreferrer"
                             className="text-destructive hover:text-destructive/80"
                           >
-                            <Youtube className="h-4 w-4" />
+                            <Play className="h-4 w-4" />
                           </a>
                         )}
                         <a
