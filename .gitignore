@@ -1,0 +1,55 @@
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+.env
+*.env
+
+# ── Secrets & credentials ────────────────────────────────────────────────────
+credentials.json
+token.json
+*.pem
+*.key
+*.p12
+*.pfx
+serviceAccountKey.json
+
+# ── Pipeline intermediate / output files ─────────────────────────────────────
+ToolsDiscovery/new_tools*.csv
+ToolsDiscovery/pipeline_config.json
+ToolsDiscovery/ai_leads_preview.csv
+ToolsDiscovery/active_tools.csv
+ToolsDiscovery/removed_tools.csv
+ToolsDiscovery/results/
+
+# ── Node / Next.js ───────────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+.vercel/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
+
+# ── OS / editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
