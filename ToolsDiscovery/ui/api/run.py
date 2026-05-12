@@ -70,12 +70,7 @@ class handler(BaseHTTPRequestHandler):
         with tempfile.TemporaryDirectory() as tmpdir:
             base_dir = Path(tmpdir)
 
-            # Copy static assets needed by the pipeline
-            src = Path(__file__).parent.parent / "ToolsDiscovery"
-            for fname in ["active_tools.csv", "removed_tools.csv"]:
-                src_file = src / fname
-                if src_file.exists():
-                    (base_dir / fname).write_bytes(src_file.read_bytes())
+            # (no static CSV assets to pre-copy — step 1 loads fresh from Sheets)
 
             send("STATUS:running")
 

@@ -52,6 +52,7 @@ class handler(BaseHTTPRequestHandler):
             "name": data.get("name", "Untitled"),
             "date": data.get("date", ""),
             "categories": data.get("categories", []),
+            "counts": data.get("counts", {}),
             "platforms": data.get("platforms", []),
             "accessType": data.get("accessType", []),
             "pricing": data.get("pricing", []),
