@@ -1,34 +1,28 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// ── Constants ────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  "Vision",
-  "Reading",
-  "Cognitive",
-  "Physical",
-  "Hearing",
-  "Speech/ Communication",
-  "Training/ Therapy",
-  "Executive Function",
+  "Vision", "Reading", "Cognitive", "Physical", "Hearing",
+  "Speech/ Communication", "Training/ Therapy", "Executive Function",
 ] as const;
 
 const PLATFORMS = [
-  "Windows",
-  "macOS",
-  "iOS",
-  "Android",
-  "Web",
-  "Chrome OS",
-  "Linux",
+  "Windows", "Macintosh/Mac", "Chromebook", "iPad", "iPhone", "Android",
 ] as const;
+
+const ACCESS_TYPES = ["Built-in", "Installable"] as const;
+
+const PRICING_OPTIONS = ["Free", "Free Trial", "Subscription", "One-time purchase"] as const;
 
 const FREQUENCIES = ["daily", "weekly", "monthly"] as const;
 
-type Frequency = typeof FREQUENCIES[number];
-type Platform  = typeof PLATFORMS[number];
+type Frequency   = typeof FREQUENCIES[number];
+type Platform    = typeof PLATFORMS[number];
+type AccessType  = typeof ACCESS_TYPES[number];
+type PricingOpt  = typeof PRICING_OPTIONS[number];
 
 const STEPS = [
   "Load Google Sheets database",
@@ -40,262 +34,238 @@ const STEPS = [
   "Clean up files",
 ] as const;
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 type Status    = "idle" | "running" | "done" | "error";
 type StepState = "pending" | "active" | "done";
 
-interface LogLine {
-  text: string;
-  kind: "normal" | "error" | "step" | "ok" | "warn";
-}
+interface LogLine { text: string; kind: "normal"|"error"|"step"|"ok"|"warn"; }
 
 interface ScheduledSearch {
-  id: string;
-  name: string;
-  date: string;
-  categories: string[];
-  platforms: Platform[];
-  frequency: Frequency;
-  createdAt: string;
+  id: string; name: string; date: string;
+  categories: string[]; platforms: Platform[];
+  accessType: AccessType[]; pricing: PricingOpt[];
+  frequency: Frequency; createdAt: string;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+interface RunRecord {
+  id: string; startedAt: string; finishedAt: string;
+  status: "done"|"error"; params: Record<string,unknown>;
+  toolsFound: number; sheetUrl: string;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function classifyLog(text: string): LogLine["kind"] {
-  const lower = text.toLowerCase();
-  if (lower.includes("[error]") || lower.includes("[fatal]")) return "error";
+  const l = text.toLowerCase();
+  if (l.includes("[error]") || l.includes("[fatal]")) return "error";
   if (text.startsWith("  Step ") || text.startsWith("=")) return "step";
-  if (lower.includes("complete") || lower.includes("success") || lower.includes("pushed")) return "ok";
-  if (lower.includes("warn") || lower.includes("skip")) return "warn";
+  if (l.includes("complete") || l.includes("success") || l.includes("pushed")) return "ok";
+  if (l.includes("warn") || l.includes("skip")) return "warn";
   return "normal";
 }
 
-const logColorClass: Record<LogLine["kind"], string> = {
-  normal: "text-slate-400",
-  error:  "text-red-400",
-  step:   "text-indigo-400 font-semibold",
-  ok:     "text-green-400",
-  warn:   "text-amber-400",
+const logColor: Record<LogLine["kind"],string> = {
+  normal:"text-slate-400", error:"text-red-400",
+  step:"text-indigo-400 font-semibold", ok:"text-green-400", warn:"text-amber-400",
 };
 
-// ── Badge ─────────────────────────────────────────────────────────────────────
-
-const badgeStyles: Record<Status, { pill: string; dot: string; label: string }> = {
-  idle:    { pill: "bg-slate-800 text-slate-500 border border-slate-700",    dot: "",                      label: "Idle"     },
-  running: { pill: "bg-blue-950  text-blue-400  border border-blue-700",     dot: "animate-pulse-dot",     label: "Running"  },
-  done:    { pill: "bg-green-950 text-green-400 border border-green-800",    dot: "",                      label: "Complete" },
-  error:   { pill: "bg-red-950   text-red-400   border border-red-900",      dot: "",                      label: "Error"    },
+const badgeStyles: Record<Status,{pill:string;dot:string;label:string}> = {
+  idle:    { pill:"bg-slate-800 text-slate-500 border border-slate-700", dot:"",                   label:"Idle"     },
+  running: { pill:"bg-blue-950  text-blue-400  border border-blue-700",  dot:"animate-pulse-dot",  label:"Running"  },
+  done:    { pill:"bg-green-950 text-green-400 border border-green-800", dot:"",                   label:"Complete" },
+  error:   { pill:"bg-red-950   text-red-400   border border-red-900",   dot:"",                   label:"Error"    },
 };
 
-// ── Main component ────────────────────────────────────────────────────────────
+function fmtDate(iso: string) {
+  try { return new Date(iso).toLocaleString(); } catch { return iso; }
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [counts, setCounts] = useState<Record<string, number>>(
-    Object.fromEntries(CATEGORIES.map((c) => [c, 0]))
-  );
-  const [status, setStatus]       = useState<Status>("idle");
-  const [steps, setSteps]         = useState<StepState[]>(STEPS.map(() => "pending"));
-  const [logs, setLogs]           = useState<LogLine[]>([]);
-  const [elapsed, setElapsed]     = useState("");
-  const [sheetUrl, setSheetUrl]   = useState<string | null>(null);
-  const [running, setRunning]     = useState(false);
-
-  // ── Scheduler state ───────────────────────────────────────────────────────
   const todayStr = new Date().toISOString().split("T")[0];
+
+  // Pipeline state
+  const [counts,   setCounts]   = useState<Record<string,number>>(Object.fromEntries(CATEGORIES.map(c=>[c,0])));
+  const [status,   setStatus]   = useState<Status>("idle");
+  const [steps,    setSteps]    = useState<StepState[]>(STEPS.map(()=>"pending"));
+  const [logs,     setLogs]     = useState<LogLine[]>([]);
+  const [elapsed,  setElapsed]  = useState("");
+  const [sheetUrl, setSheetUrl] = useState<string|null>(null);
+  const [running,  setRunning]  = useState(false);
+
+  // Scheduler form state
   const [schedName,       setSchedName]       = useState("");
   const [schedDate,       setSchedDate]       = useState(todayStr);
   const [schedCategories, setSchedCategories] = useState<string[]>([]);
   const [schedPlatforms,  setSchedPlatforms]  = useState<Platform[]>([]);
+  const [schedAccessType, setSchedAccessType] = useState<AccessType[]>([...ACCESS_TYPES]);
+  const [schedPricing,    setSchedPricing]    = useState<PricingOpt[]>([]);
   const [schedFrequency,  setSchedFrequency]  = useState<Frequency>("weekly");
-  const [schedules,       setSchedules]       = useState<ScheduledSearch[]>([]);
   const [schedError,      setSchedError]      = useState("");
 
-  const toggleSchedCategory = (cat: string) =>
-    setSchedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    );
+  // Persisted data
+  const [schedules, setSchedules] = useState<ScheduledSearch[]>([]);
+  const [history,   setHistory]   = useState<RunRecord[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const toggleSchedPlatform = (p: Platform) =>
-    setSchedPlatforms((prev) =>
-      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]
-    );
-
-  const validateSched = () => {
-    if (!schedName.trim())          return "Please enter a search name.";
-    if (!schedDate)                 return "Please select a date.";
-    if (schedCategories.length === 0) return "Select at least one category.";
-    if (schedPlatforms.length === 0)  return "Select at least one platform.";
-    return "";
-  };
-
-  const saveSchedule = () => {
-    const err = validateSched();
-    if (err) { setSchedError(err); return; }
-    setSchedError("");
-    const entry: ScheduledSearch = {
-      id: crypto.randomUUID(),
-      name: schedName.trim(),
-      date: schedDate,
-      categories: schedCategories,
-      platforms: schedPlatforms,
-      frequency: schedFrequency,
-      createdAt: new Date().toISOString(),
-    };
-    setSchedules((prev) => [entry, ...prev]);
-    setSchedName("");
-    setSchedDate(todayStr);
-    setSchedCategories([]);
-    setSchedPlatforms([]);
-    setSchedFrequency("weekly");
-  };
-
-  const runNow = () => {
-    const err = validateSched();
-    if (err) { setSchedError(err); return; }
-    setSchedError("");
-    // Map selected categories to counts (1 each) and kick off the pipeline
-    const nowCounts = Object.fromEntries(
-      CATEGORIES.map((c) => [c, schedCategories.includes(c) ? 1 : 0])
-    );
-    setCounts(nowCounts);
-    // Small delay so the count state propagates before startPipeline reads it
-    setTimeout(() => startPipelineWith(nowCounts), 50);
-  };
-
-  const deleteSchedule = (id: string) =>
-    setSchedules((prev) => prev.filter((s) => s.id !== id));
-
+  // Refs
   const logEndRef    = useRef<HTMLDivElement>(null);
-  const evtSourceRef = useRef<EventSource | null>(null);
-  const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const readerRef    = useRef<ReadableStreamDefaultReader|null>(null);
+  const timerRef     = useRef<ReturnType<typeof setInterval>|null>(null);
   const startTimeRef = useRef<number>(0);
   const currentStep  = useRef<number>(0);
 
-  const total = Object.values(counts).reduce((s, v) => s + v, 0);
+  const total = Object.values(counts).reduce((s,v)=>s+v,0);
 
-  // Auto-scroll log console
+  // ── Load schedules + history from API on mount ────────────────────────────
+
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [logs]);
+    Promise.all([
+      fetch("/api/schedules").then(r=>r.json()).catch(()=>[]),
+      fetch("/api/history").then(r=>r.json()).catch(()=>[]),
+    ]).then(([scheds, hist]) => {
+      setSchedules(scheds);
+      setHistory(hist);
+      setDataLoaded(true);
+    });
+  }, []);
+
+  // Auto-scroll log
+  useEffect(() => { logEndRef.current?.scrollIntoView({behavior:"smooth"}); }, [logs]);
 
   // ── Timer ──────────────────────────────────────────────────────────────────
 
   const startTimer = useCallback(() => {
     startTimeRef.current = Date.now();
     timerRef.current = setInterval(() => {
-      const s = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      const m = Math.floor(s / 60);
-      setElapsed(`${m}m ${s % 60}s elapsed`);
+      const s = Math.floor((Date.now()-startTimeRef.current)/1000);
+      setElapsed(`${Math.floor(s/60)}m ${s%60}s elapsed`);
     }, 1000);
   }, []);
 
   const stopTimer = useCallback(() => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current=null; }
   }, []);
 
   // ── Step helpers ───────────────────────────────────────────────────────────
 
   const activateStep = useCallback((num: number) => {
     currentStep.current = num;
-    setSteps(STEPS.map((_, i) => {
-      if (i + 1 < num)  return "done";
-      if (i + 1 === num) return "active";
-      return "pending";
-    }));
+    setSteps(STEPS.map((_,i) => i+1<num?"done":i+1===num?"active":"pending"));
   }, []);
 
   const finalizeSteps = useCallback((success: boolean) => {
-    setSteps(STEPS.map((_, i) => {
-      if (success) return "done";
-      return i + 1 <= currentStep.current ? "done" : "pending";
-    }));
+    setSteps(STEPS.map((_,i) => success?"done":i+1<=currentStep.current?"done":"pending"));
   }, []);
 
-  // ── SSE connection ─────────────────────────────────────────────────────────
+  // ── Pipeline runner (reads streaming response) ────────────────────────────
 
-  const connectSSE = useCallback(() => {
-    if (evtSourceRef.current) evtSourceRef.current.close();
-    // /api/stream is proxied to Flask /stream by next.config.mjs
-    const src = new EventSource("/api/stream");
-    evtSourceRef.current = src;
+  const startPipelineWith = useCallback(async (payload: Record<string,unknown>) => {
+    const payloadTotal = Object.values(payload.tools_per_category as Record<string,number>).reduce((s,v)=>s+v,0);
+    if (payloadTotal===0) { alert("Please enter at least one category count greater than 0."); return; }
 
-    src.onmessage = (e) => {
-      const msg: string = e.data;
-      if (!msg) return; // keep-alive ping
+    setRunning(true); setStatus("idle"); setLogs([]); setElapsed(""); setSheetUrl(null);
+    setSteps(STEPS.map(()=>"pending")); currentStep.current=0;
+    startTimer(); setStatus("running");
 
-      if (msg.startsWith("STATUS:")) {
-        const st = msg.split(":")[1];
-        if (st === "running") {
-          setStatus("running");
-        } else if (st === "done") {
-          setStatus("done");
-          finalizeSteps(true);
-          stopTimer();
-          setRunning(false);
-        } else if (st === "error") {
-          setStatus("error");
-          finalizeSteps(false);
-          stopTimer();
-          setRunning(false);
+    try {
+      const res = await fetch("/api/run", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok || !res.body) throw new Error("Pipeline request failed");
+
+      const reader = res.body.getReader();
+      readerRef.current = reader;
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, {stream:true});
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const msg = line.slice(5).trim();
+          if (!msg) continue;
+
+          if (msg.startsWith("STATUS:")) {
+            const st = msg.split(":")[1];
+            if (st==="done")  { setStatus("done");  finalizeSteps(true);  stopTimer(); setRunning(false); setHistory(h=>[...h]); }
+            if (st==="error") { setStatus("error"); finalizeSteps(false); stopTimer(); setRunning(false); }
+            continue;
+          }
+          if (msg.startsWith("SHEET_URL:")) { setSheetUrl(msg.slice(10)); continue; }
+          const sm = msg.match(/Step\s+(\d+)\s+\|/);
+          if (sm) activateStep(parseInt(sm[1],10));
+          setLogs(prev=>[...prev,{text:msg, kind:classifyLog(msg)}]);
         }
-        return;
       }
+    } catch (e) {
+      setLogs(prev=>[...prev,{text:`[ERROR] ${(e as Error).message}`, kind:"error"}]);
+      setStatus("error"); stopTimer(); setRunning(false);
+    }
 
-      if (msg.startsWith("SHEET_URL:")) {
-        setSheetUrl(msg.slice("SHEET_URL:".length));
-        return;
-      }
+    // Refresh history after run
+    fetch("/api/history").then(r=>r.json()).then(setHistory).catch(()=>{});
+  }, [startTimer, stopTimer, activateStep, finalizeSteps]);
 
-      // Detect "  Step N  |" lines
-      const stepMatch = msg.match(/Step\s+(\d+)\s+\|/);
-      if (stepMatch) activateStep(parseInt(stepMatch[1], 10));
+  const startPipeline = useCallback(() => {
+    startPipelineWith({ tools_per_category: counts });
+  }, [counts, startPipelineWith]);
 
-      setLogs((prev) => [...prev, { text: msg, kind: classifyLog(msg) }]);
+  // ── Scheduler helpers ─────────────────────────────────────────────────────
+
+  const toggle = <T extends string>(arr: T[], val: T): T[] =>
+    arr.includes(val) ? arr.filter(x=>x!==val) : [...arr, val];
+
+  const validateSched = () => {
+    if (!schedName.trim())           return "Please enter a search name.";
+    if (!schedDate)                  return "Please select a date.";
+    if (schedCategories.length===0)  return "Select at least one category.";
+    if (schedPlatforms.length===0)   return "Select at least one platform.";
+    return "";
+  };
+
+  const saveSchedule = async () => {
+    const err = validateSched();
+    if (err) { setSchedError(err); return; }
+    setSchedError("");
+    const body = {
+      name:schedName.trim(), date:schedDate, categories:schedCategories,
+      platforms:schedPlatforms, accessType:schedAccessType,
+      pricing:schedPricing, frequency:schedFrequency,
     };
-  }, [activateStep, finalizeSteps, stopTimer]);
-
-  // ── Start pipeline ─────────────────────────────────────────────────────────
-
-  const startPipelineWith = useCallback(async (overrideCounts?: Record<string, number>) => {
-    const payload = overrideCounts ?? counts;
-    const payloadTotal = Object.values(payload).reduce((s, v) => s + v, 0);
-    if (payloadTotal === 0) {
-      alert("Please enter at least one category count greater than 0.");
-      return;
+    const res = await fetch("/api/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if (res.ok) {
+      const entry = await res.json();
+      setSchedules(prev=>[entry,...prev]);
+      setSchedName(""); setSchedDate(todayStr); setSchedCategories([]);
+      setSchedPlatforms([]); setSchedAccessType([...ACCESS_TYPES]);
+      setSchedPricing([]); setSchedFrequency("weekly");
     }
+  };
 
-    setRunning(true);
-    setStatus("idle");
-    setLogs([]);
-    setElapsed("");
-    setSheetUrl(null);
-    setSteps(STEPS.map(() => "pending"));
-    currentStep.current = 0;
+  const deleteSchedule = async (id: string) => {
+    await fetch(`/api/schedules?id=${id}`,{method:"DELETE"});
+    setSchedules(prev=>prev.filter(s=>s.id!==id));
+  };
 
-    connectSSE();
-    startTimer();
-    setStatus("running");
-
-    const res = await fetch("/api/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+  const runScheduleNow = (s: ScheduledSearch) => {
+    const counts = Object.fromEntries(CATEGORIES.map(c=>[c, s.categories.includes(c)?1:0]));
+    startPipelineWith({
+      tools_per_category: counts,
+      platforms_filter: s.platforms,
+      access_type_filter: s.accessType,
+      pricing_filter: s.pricing,
     });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      setLogs((prev) => [...prev, {
-        text: `[ERROR] ${(err as { error?: string }).error ?? "Failed to start pipeline."}`,
-        kind: "error",
-      }]);
-      setStatus("error");
-      stopTimer();
-      setRunning(false);
-    }
-  }, [counts, connectSSE, startTimer, stopTimer]);
-
-  const startPipeline = useCallback(() => startPipelineWith(), [startPipelineWith]);
+  };
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -304,22 +274,12 @@ export default function Dashboard() {
   return (
     <main className="flex flex-col items-center px-4 py-10 pb-16 min-h-screen bg-[#0f1117]">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <header className="text-center mb-10">
-        <h1
-          className="text-3xl font-bold"
-          style={{
-            background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#06b6d4 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}
-        >
+        <h1 className="text-3xl font-bold" style={{background:"linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#06b6d4 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>
           AT Tool Discovery
         </h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Pipeline Dashboard — configure, run, and monitor from your browser
-        </p>
+        <p className="text-slate-500 text-sm mt-1">Pipeline Dashboard — configure, run, and monitor from your browser</p>
       </header>
 
       {/* ── Category config card ── */}
@@ -328,28 +288,17 @@ export default function Dashboard() {
           <PencilIcon />
           Configure — Tools to find per category
         </div>
-
         <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
-          {CATEGORIES.map((cat) => (
-            <div
-              key={cat}
-              className="flex items-center justify-between bg-[#262b40] border border-[#343a54] rounded-xl px-3 py-2 gap-3 focus-within:border-indigo-500 transition-colors"
-            >
+          {CATEGORIES.map(cat=>(
+            <div key={cat} className="flex items-center justify-between bg-[#262b40] border border-[#343a54] rounded-xl px-3 py-2 gap-3 focus-within:border-indigo-500 transition-colors">
               <label className="text-slate-300 text-sm flex-1 truncate">{cat}</label>
-              <input
-                type="number"
-                min={0}
-                max={999}
-                value={counts[cat]}
-                onChange={(e) =>
-                  setCounts((prev) => ({ ...prev, [cat]: Math.max(0, parseInt(e.target.value) || 0) }))
-                }
+              <input type="number" min={0} max={999} value={counts[cat]}
+                onChange={e=>setCounts(prev=>({...prev,[cat]:Math.max(0,parseInt(e.target.value)||0)}))}
                 className="w-16 bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded-md text-slate-100 text-sm text-center px-2 py-1 outline-none transition-colors"
               />
             </div>
           ))}
         </div>
-
         <div className="flex items-center justify-between mt-5 px-4 py-3 bg-[#1a1f33] border border-[#2d3148] rounded-xl">
           <span className="text-slate-500 text-sm">Estimated tools to discover</span>
           <span className="text-indigo-400 text-xl font-bold">{total}</span>
@@ -357,14 +306,10 @@ export default function Dashboard() {
       </section>
 
       {/* ── Run button ── */}
-      <button
-        onClick={startPipeline}
-        disabled={running}
+      <button onClick={startPipeline} disabled={running}
         className="w-full max-w-3xl flex items-center justify-center gap-2 py-3 mb-5 rounded-xl text-base font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:opacity-90 hover:-translate-y-px active:translate-y-0"
-        style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}
-      >
-        <PlayIcon />
-        Run Pipeline
+        style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)"}}>
+        <PlayIcon />Run Pipeline
       </button>
 
       {/* ── Schedule Search card ── */}
@@ -373,84 +318,75 @@ export default function Dashboard() {
           <CalendarIcon />
           Schedule a Search
         </div>
-
         <div className="flex flex-col gap-4">
 
-          {/* Name + Date row */}
+          {/* Name + Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-slate-400 text-xs font-medium">Search Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Weekly Vision Scan"
-                value={schedName}
-                onChange={(e) => setSchedName(e.target.value)}
+              <input type="text" placeholder="e.g. Weekly Vision Scan" value={schedName}
+                onChange={e=>setSchedName(e.target.value)}
                 className="bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded-lg text-slate-100 text-sm px-3 py-2 outline-none transition-colors placeholder:text-slate-600"
               />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-slate-400 text-xs font-medium">Start Date</label>
-              <input
-                type="date"
-                value={schedDate}
-                onChange={(e) => setSchedDate(e.target.value)}
+              <input type="date" value={schedDate} onChange={e=>setSchedDate(e.target.value)}
                 className="bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded-lg text-slate-100 text-sm px-3 py-2 outline-none transition-colors"
-                style={{ colorScheme: "dark" }}
+                style={{colorScheme:"dark"}}
               />
             </div>
           </div>
 
           {/* Categories */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-400 text-xs font-medium">
-              Categories
-              <span className="ml-2 text-slate-600 normal-case font-normal">(select one or more)</span>
-            </label>
+            <label className="text-slate-400 text-xs font-medium">Categories <span className="ml-1 text-slate-600 normal-case font-normal">(select one or more)</span></label>
             <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((cat) => {
-                const checked = schedCategories.includes(cat);
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => toggleSchedCategory(cat)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                      checked
-                        ? "bg-indigo-600 border-indigo-500 text-white"
-                        : "bg-[#262b40] border-[#343a54] text-slate-400 hover:border-indigo-600"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
+              {CATEGORIES.map(cat=>(
+                <button key={cat} type="button" onClick={()=>setSchedCategories(p=>toggle(p,cat))}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${schedCategories.includes(cat)?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-indigo-600"}`}>
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Platforms */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-400 text-xs font-medium">
-              Platforms
-              <span className="ml-2 text-slate-600 normal-case font-normal">(select one or more)</span>
-            </label>
+            <label className="text-slate-400 text-xs font-medium">Platforms <span className="ml-1 text-slate-600 normal-case font-normal">(select one or more)</span></label>
             <div className="flex flex-wrap gap-2">
-              {PLATFORMS.map((p) => {
-                const checked = schedPlatforms.includes(p);
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => toggleSchedPlatform(p)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                      checked
-                        ? "bg-cyan-700 border-cyan-500 text-white"
-                        : "bg-[#262b40] border-[#343a54] text-slate-400 hover:border-cyan-600"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
+              {PLATFORMS.map(p=>(
+                <button key={p} type="button" onClick={()=>setSchedPlatforms(prev=>toggle(prev,p))}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${schedPlatforms.includes(p)?"bg-cyan-700 border-cyan-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-cyan-600"}`}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Access Type */}
+          <div className="flex flex-col gap-2">
+            <label className="text-slate-400 text-xs font-medium">Access Type <span className="ml-1 text-slate-600 normal-case font-normal">(built-in OS feature vs separately installable)</span></label>
+            <div className="flex gap-3">
+              {ACCESS_TYPES.map(a=>(
+                <button key={a} type="button" onClick={()=>setSchedAccessType(p=>toggle(p,a))}
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${schedAccessType.includes(a)?"bg-emerald-700 border-emerald-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-emerald-600"}`}>
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Pricing */}
+          <div className="flex flex-col gap-2">
+            <label className="text-slate-400 text-xs font-medium">Pricing Filter <span className="ml-1 text-slate-600 normal-case font-normal">(leave blank for any pricing)</span></label>
+            <div className="flex flex-wrap gap-2">
+              {PRICING_OPTIONS.map(p=>(
+                <button key={p} type="button" onClick={()=>setSchedPricing(prev=>toggle(prev,p))}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${schedPricing.includes(p)?"bg-amber-600 border-amber-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-amber-600"}`}>
+                  {p}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -458,47 +394,32 @@ export default function Dashboard() {
           <div className="flex flex-col gap-2">
             <label className="text-slate-400 text-xs font-medium">Frequency</label>
             <div className="flex gap-3">
-              {FREQUENCIES.map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setSchedFrequency(f)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-colors ${
-                    schedFrequency === f
-                      ? "bg-violet-700 border-violet-500 text-white"
-                      : "bg-[#262b40] border-[#343a54] text-slate-400 hover:border-violet-600"
-                  }`}
-                >
+              {FREQUENCIES.map(f=>(
+                <button key={f} type="button" onClick={()=>setSchedFrequency(f)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-colors ${schedFrequency===f?"bg-violet-700 border-violet-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-violet-600"}`}>
                   {f}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Error */}
-          {schedError && (
-            <p className="text-red-400 text-xs">{schedError}</p>
-          )}
+          {schedError && <p className="text-red-400 text-xs">{schedError}</p>}
 
-          {/* Action buttons */}
           <div className="flex gap-3 mt-1">
-            <button
-              type="button"
-              onClick={saveSchedule}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-indigo-600 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-colors"
-            >
-              <CalendarIcon small />
-              Schedule
+            <button type="button" onClick={saveSchedule}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-indigo-600 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-colors">
+              <CalendarIcon small />Schedule
             </button>
-            <button
-              type="button"
-              onClick={runNow}
+            <button type="button"
+              onClick={()=>{
+                const err=validateSched(); if(err){setSchedError(err);return;} setSchedError("");
+                const c=Object.fromEntries(CATEGORIES.map(cat=>[cat,schedCategories.includes(cat)?1:0]));
+                startPipelineWith({tools_per_category:c,platforms_filter:schedPlatforms,access_type_filter:schedAccessType,pricing_filter:schedPricing});
+              }}
               disabled={running}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:opacity-90"
-              style={{ background: "linear-gradient(135deg,#0891b2,#6366f1)" }}
-            >
-              <PlayIcon />
-              Run Now
+              style={{background:"linear-gradient(135deg,#0891b2,#6366f1)"}}>
+              <PlayIcon />Run Now
             </button>
           </div>
         </div>
@@ -510,44 +431,32 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">
             <ClockIcon />
             Scheduled Searches
-            <span className="ml-auto bg-indigo-900 text-indigo-300 text-xs font-bold px-2 py-0.5 rounded-full">
-              {schedules.length}
-            </span>
+            <span className="ml-auto bg-indigo-900 text-indigo-300 text-xs font-bold px-2 py-0.5 rounded-full">{schedules.length}</span>
           </div>
           <div className="flex flex-col gap-3">
-            {schedules.map((s) => (
-              <div
-                key={s.id}
-                className="bg-[#262b40] border border-[#343a54] rounded-xl px-4 py-3 flex items-start justify-between gap-3"
-              >
-                <div className="flex flex-col gap-1 min-w-0">
+            {schedules.map(s=>(
+              <div key={s.id} className="bg-[#262b40] border border-[#343a54] rounded-xl px-4 py-3 flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-1 min-w-0 flex-1">
                   <span className="text-slate-200 text-sm font-semibold truncate">{s.name}</span>
                   <div className="flex flex-wrap gap-1.5 mt-1">
-                    <span className="text-xs bg-violet-900/60 text-violet-300 border border-violet-700 px-2 py-0.5 rounded-full capitalize">
-                      {s.frequency}
-                    </span>
-                    <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#343a54] px-2 py-0.5 rounded-full">
-                      📅 {s.date}
-                    </span>
-                    {s.categories.map((c) => (
-                      <span key={c} className="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full">
-                        {c}
-                      </span>
-                    ))}
-                    {s.platforms.map((p) => (
-                      <span key={p} className="text-xs bg-cyan-900/40 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded-full">
-                        {p}
-                      </span>
-                    ))}
+                    <span className="text-xs bg-violet-900/60 text-violet-300 border border-violet-700 px-2 py-0.5 rounded-full capitalize">{s.frequency}</span>
+                    <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#343a54] px-2 py-0.5 rounded-full">📅 {s.date}</span>
+                    {s.categories.map(c=><span key={c} className="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full">{c}</span>)}
+                    {s.platforms.map(p=><span key={p} className="text-xs bg-cyan-900/40 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded-full">{p}</span>)}
+                    {s.accessType?.map(a=><span key={a} className="text-xs bg-emerald-900/40 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full">{a}</span>)}
+                    {s.pricing?.map(p=><span key={p} className="text-xs bg-amber-900/40 text-amber-300 border border-amber-800 px-2 py-0.5 rounded-full">{p}</span>)}
                   </div>
                 </div>
-                <button
-                  onClick={() => deleteSchedule(s.id)}
-                  className="text-slate-600 hover:text-red-400 transition-colors mt-0.5 flex-shrink-0"
-                  title="Remove schedule"
-                >
-                  <TrashIcon />
-                </button>
+                <div className="flex gap-2 flex-shrink-0 mt-0.5">
+                  <button onClick={()=>runScheduleNow(s)} disabled={running} title="Run this schedule now"
+                    className="text-indigo-500 hover:text-indigo-300 disabled:opacity-30 transition-colors">
+                    <PlayIcon />
+                  </button>
+                  <button onClick={()=>deleteSchedule(s.id)} title="Remove schedule"
+                    className="text-slate-600 hover:text-red-400 transition-colors">
+                    <TrashIcon />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -555,141 +464,165 @@ export default function Dashboard() {
       )}
 
       {/* ── Progress card ── */}
-      <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-2xl p-8">
+      <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-2xl p-8 mb-5">
         <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-5">
-          <TableIcon />
-          Pipeline Progress
+          <TableIcon />Pipeline Progress
         </div>
-
-        {/* Badge + elapsed */}
         <div className="flex items-center gap-3 mb-5">
           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${badge.pill}`}>
-            <span className={badge.dot}>●</span>
-            {badge.label}
+            <span className={badge.dot}>●</span>{badge.label}
           </span>
           {elapsed && <span className="text-slate-500 text-xs">{elapsed}</span>}
         </div>
-
-        {/* Step list */}
         <div className="flex flex-col gap-2 mb-5">
-          {STEPS.map((label, i) => {
-            const state = steps[i];
-            const textColor =
-              state === "active" ? "text-blue-300" :
-              state === "done"   ? "text-green-400" :
-              "text-slate-600";
-            const dotBg =
-              state === "active" ? "bg-blue-400 animate-pulse-dot" :
-              state === "done"   ? "bg-green-400" :
-              "";
+          {STEPS.map((label,i)=>{
+            const state=steps[i];
             return (
-              <div key={i} className={`flex items-center gap-3 text-sm ${textColor} transition-colors`}>
-                <span
-                  className={`w-2.5 h-2.5 rounded-full border-2 border-current flex-shrink-0 ${dotBg}`}
-                />
-                Step {i + 1} — {label}
+              <div key={i} className={`flex items-center gap-3 text-sm transition-colors ${state==="active"?"text-blue-300":state==="done"?"text-green-400":"text-slate-600"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full border-2 border-current flex-shrink-0 ${state==="active"?"bg-blue-400 animate-pulse-dot":state==="done"?"bg-green-400":""}`}/>
+                Step {i+1} — {label}
               </div>
             );
           })}
         </div>
-
-        {/* Log console */}
         <div className="bg-[#0a0d14] border border-[#1e2435] rounded-xl p-4 h-80 overflow-y-auto font-mono text-xs leading-relaxed">
-          {logs.length === 0 ? (
-            <span className="text-slate-700">Waiting for pipeline to start…</span>
-          ) : (
-            logs.map((line, i) => (
-              <div key={i} className={logColorClass[line.kind]}>
-                {line.text}
-              </div>
-            ))
-          )}
-          <div ref={logEndRef} />
+          {logs.length===0
+            ? <span className="text-slate-700">Waiting for pipeline to start…</span>
+            : logs.map((line,i)=><div key={i} className={logColor[line.kind]}>{line.text}</div>)
+          }
+          <div ref={logEndRef}/>
         </div>
-
-        {/* Sheet link */}
         {sheetUrl && (
-          <a
-            href={sheetUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 mt-4 px-4 py-3 bg-green-950 border border-green-800 rounded-xl text-green-400 text-sm font-medium hover:bg-green-900 transition-colors"
-          >
-            <ExternalLinkIcon />
-            Open AI_LEADS in Google Sheets
+          <a href={sheetUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 mt-4 px-4 py-3 bg-green-950 border border-green-800 rounded-xl text-green-400 text-sm font-medium hover:bg-green-900 transition-colors">
+            <ExternalLinkIcon />Open AI_LEADS in Google Sheets
           </a>
         )}
       </section>
+
+      {/* ── Run History ── */}
+      {dataLoaded && (
+        <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-2xl p-8">
+          <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">
+            <HistoryIcon />
+            Run History
+            {history.length>0 && <span className="ml-auto bg-slate-800 text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">{history.length}</span>}
+          </div>
+          {history.length===0
+            ? <p className="text-slate-600 text-sm">No runs yet. Run the pipeline to see history here.</p>
+            : (
+              <div className="flex flex-col gap-3">
+                {history.map(run=>(
+                  <div key={run.id} className="bg-[#262b40] border border-[#343a54] rounded-xl px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${run.status==="done"?"bg-green-400":"bg-red-400"}`}/>
+                        <span className="text-slate-200 text-sm font-medium">{fmtDate(run.startedAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {run.toolsFound>0 && (
+                          <span className="text-xs text-emerald-400 font-semibold">{run.toolsFound} tools found</span>
+                        )}
+                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded-full border ${run.status==="done"?"bg-green-950 text-green-400 border-green-800":"bg-red-950 text-red-400 border-red-900"}`}>
+                          {run.status}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Search params summary */}
+                    {run.params && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {Object.entries((run.params.tools_per_category as Record<string,number>)||{})
+                          .filter(([,v])=>v>0)
+                          .map(([cat,count])=>(
+                            <span key={cat} className="text-xs bg-indigo-900/40 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full">{cat}: {count}</span>
+                          ))}
+                        {(run.params.platforms_filter as string[]||[]).map(p=>(
+                          <span key={p} className="text-xs bg-cyan-900/30 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded-full">{p}</span>
+                        ))}
+                        {(run.params.pricing_filter as string[]||[]).map(p=>(
+                          <span key={p} className="text-xs bg-amber-900/30 text-amber-300 border border-amber-800 px-2 py-0.5 rounded-full">{p}</span>
+                        ))}
+                      </div>
+                    )}
+                    {run.sheetUrl && (
+                      <a href={run.sheetUrl} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-2 text-xs text-green-400 hover:text-green-300 transition-colors">
+                        <ExternalLinkIcon />View in Google Sheets
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          }
+        </section>
+      )}
+
     </main>
   );
 }
 
-// ── Inline SVG icons ──────────────────────────────────────────────────────────
+// ── Inline SVG icons ───────────────────────────────────────────────────────────
 
 function PencilIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ flexShrink: 0 }}>
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{flexShrink:0}}>
+      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
     </svg>
   );
 }
-
 function PlayIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      <polygon points="5 3 19 12 5 21 5 3" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <polygon points="5 3 19 12 5 21 5 3"/>
     </svg>
   );
 }
-
 function TableIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <path d="M3 9h18M9 21V9" />
+      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
     </svg>
   );
 }
-
 function ExternalLinkIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <polyline points="15 3 21 3 21 9" />
-      <line x1="10" y1="14" x2="21" y2="3" />
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
     </svg>
   );
 }
-
-function CalendarIcon({ small }: { small?: boolean }) {
-  const s = small ? 14 : 15;
+function CalendarIcon({small}:{small?:boolean}) {
+  const s=small?14:15;
   return (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-      <rect x="3" y="4" width="18" height="18" rx="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8"  y1="2" x2="8"  y2="6" />
-      <line x1="3"  y1="10" x2="21" y2="10" />
+      <rect x="3" y="4" width="18" height="18" rx="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
     </svg>
   );
 }
-
 function ClockIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
     </svg>
   );
 }
-
+function HistoryIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
+      <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+    </svg>
+  );
+}
 function TrashIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6M14 11v6" />
-      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+      <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
     </svg>
   );
 }

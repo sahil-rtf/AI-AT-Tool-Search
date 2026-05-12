@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "buildCommand": "cd ui && npm run build",
+  "outputDirectory": "ui/.next",
+  "functions": {
+    "api/run.py":       { "maxDuration": 800, "memory": 1024 },
+    "api/schedules.py": { "maxDuration": 30  },
+    "api/history.py":   { "maxDuration": 30  },
+    "api/status.py":    { "maxDuration": 10  }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ]
+}
