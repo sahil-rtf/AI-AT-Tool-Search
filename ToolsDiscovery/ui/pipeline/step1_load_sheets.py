@@ -169,6 +169,22 @@ def _load_ai_leads(service, spreadsheet_id: str, data_cols: list, log: Callable)
         return pd.DataFrame(columns=data_cols)
 
     headers = list(df.columns)
+
+    # Only include rows where the "Accepted" checkbox is ticked
+    accepted_idx = _find_col(headers, _ACCEPTED_SUBSTR)
+    if accepted_idx >= 0:
+        accepted_col = headers[accepted_idx]
+        # Google Sheets returns checkbox TRUE as the string "TRUE"
+        mask = df[accepted_col].astype(str).str.strip().str.upper() == "TRUE"
+        df = df[mask].copy()
+        if df.empty:
+            log("  AI_LEADS: no rows with 'Accepted' checked — skipped.")
+            return pd.DataFrame(columns=data_cols)
+        log(f"  AI_LEADS: {len(df)} rows with Accepted checkbox ticked.")
+    else:
+        log("  AI_LEADS: 'Accepted' column not found — loading all rows as fallback.")
+
+    # Drop the scoring/checkbox extra columns (Confidence, Accepted, Rejected, Duplicate…)
     extra_cols_idx = [
         _find_col(headers, s)
         for s in (_CONFIDENCE_SUBSTR, _ACCEPTED_SUBSTR)
@@ -180,7 +196,7 @@ def _load_ai_leads(service, spreadsheet_id: str, data_cols: list, log: Callable)
         df.columns = headers[:first_extra]
 
     df = _align_columns(df, data_cols)
-    log(f"  Loaded {len(df)} tools from AI_LEADS.")
+    log(f"  Loaded {len(df)} accepted tools from AI_LEADS.")
     return df
 
 
