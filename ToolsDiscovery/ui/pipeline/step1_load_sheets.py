@@ -52,7 +52,7 @@ def _get_credentials() -> Credentials | None:
 
     token_b64 = os.getenv("TOKEN_JSON_B64")
     if token_b64:
-        # Fix any missing base64 padding (common when copying from terminal)
+        # clean up any padding issues
         token_b64 = token_b64.strip()
         token_b64 += "=" * (-len(token_b64) % 4)
         token_data = base64.b64decode(token_b64).decode("utf-8")
