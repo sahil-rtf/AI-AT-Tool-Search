@@ -8,8 +8,5 @@
     "api/schedules.py": { "maxDuration": 30  },
     "api/history.py":   { "maxDuration": 30  },
     "api/status.py":    { "maxDuration": 10  }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
-  ]
+  }
 }
