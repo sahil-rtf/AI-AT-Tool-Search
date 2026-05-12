@@ -170,19 +170,19 @@ def _load_ai_leads(service, spreadsheet_id: str, data_cols: list, log: Callable)
 
     headers = list(df.columns)
 
-    # Only include rows where the "Accepted" checkbox is ticked
+    # Only include tool rows — newly AI-found tools have checkbox values (TRUE/FALSE)
+    # in the Accepted column. Reference/match rows beneath them have empty strings there.
     accepted_idx = _find_col(headers, _ACCEPTED_SUBSTR)
     if accepted_idx >= 0:
         accepted_col = headers[accepted_idx]
-        # Google Sheets returns checkbox TRUE as the string "TRUE"
-        mask = df[accepted_col].astype(str).str.strip().str.upper() == "TRUE"
-        df = df[mask].copy()
+        checkbox_mask = df[accepted_col].astype(str).str.strip().str.upper().isin(["TRUE", "FALSE"])
+        df = df[checkbox_mask].copy()
+        log(f"  AI_LEADS: {len(df)} newly-found tool rows (checkbox rows).")
         if df.empty:
-            log("  AI_LEADS: no rows with 'Accepted' checked — skipped.")
+            log("  AI_LEADS: no tool rows found — skipped.")
             return pd.DataFrame(columns=data_cols)
-        log(f"  AI_LEADS: {len(df)} rows with Accepted checkbox ticked.")
     else:
-        log("  AI_LEADS: 'Accepted' column not found — loading all rows as fallback.")
+        log("  AI_LEADS: 'Accepted' column not found — loading all rows.")
 
     # Drop the scoring/checkbox extra columns (Confidence, Accepted, Rejected, Duplicate…)
     extra_cols_idx = [
