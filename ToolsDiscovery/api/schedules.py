@@ -16,8 +16,8 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "ToolsDiscovery"))
-from api._blob import read_blob, write_blob
+sys.path.insert(0, str(Path(__file__).parent))
+from _blob import read_blob, write_blob
 
 
 def _cors(handler: BaseHTTPRequestHandler):

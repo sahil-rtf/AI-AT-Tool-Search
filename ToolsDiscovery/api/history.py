@@ -11,8 +11,8 @@ import sys
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "ToolsDiscovery"))
-from api._blob import read_blob
+sys.path.insert(0, str(Path(__file__).parent))
+from _blob import read_blob
 
 
 class handler(BaseHTTPRequestHandler):

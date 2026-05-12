@@ -11,7 +11,7 @@ import json
 import os
 from pathlib import Path
 
-_LOCAL_FALLBACK_DIR = Path(__file__).parent.parent / "ToolsDiscovery" / ".blob_store"
+_LOCAL_FALLBACK_DIR = Path(__file__).parent.parent / ".blob_store"
 
 
 def _use_blob() -> bool:

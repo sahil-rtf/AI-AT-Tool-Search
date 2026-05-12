@@ -19,14 +19,16 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
-# Allow importing from ToolsDiscovery root
-_BASE_DIR = Path(__file__).parent.parent / "ToolsDiscovery"
-if str(_BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(_BASE_DIR))
+# Allow importing pipeline modules and _blob from the project root
+_BASE_DIR = Path(__file__).parent.parent   # /var/task  (= ToolsDiscovery/ root)
+_API_DIR  = Path(__file__).parent           # /var/task/api
+for _p in (_BASE_DIR, _API_DIR):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 from pipeline import step1_load_sheets, step2_gemini_search, step3_second_pass
 from pipeline import step4_url_checker, step5_third_pass, step6_push_to_sheets
-from api._blob import read_blob, write_blob
+from _blob import read_blob, write_blob
 
 INTERMEDIATE_FILES = [
     "new_tools.csv", "new_tools_filtered.csv", "new_tools_final.csv",
