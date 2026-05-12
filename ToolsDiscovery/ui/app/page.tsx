@@ -87,7 +87,6 @@ export default function Dashboard() {
   const todayStr = new Date().toISOString().split("T")[0];
 
   // Pipeline state
-  const [counts,   setCounts]   = useState<Record<string,number>>(Object.fromEntries(CATEGORIES.map(c=>[c,0])));
   const [status,   setStatus]   = useState<Status>("idle");
   const [steps,    setSteps]    = useState<StepState[]>(STEPS.map(()=>"pending"));
   const [logs,     setLogs]     = useState<LogLine[]>([]);
@@ -98,12 +97,14 @@ export default function Dashboard() {
   // Scheduler form state
   const [schedName,       setSchedName]       = useState("");
   const [schedDate,       setSchedDate]       = useState(todayStr);
-  const [schedCategories, setSchedCategories] = useState<string[]>([]);
+  const [schedCounts,     setSchedCounts]     = useState<Record<string,number>>(Object.fromEntries(CATEGORIES.map(c=>[c,0])));
   const [schedPlatforms,  setSchedPlatforms]  = useState<Platform[]>([]);
   const [schedAccessType, setSchedAccessType] = useState<AccessType[]>([...ACCESS_TYPES]);
   const [schedPricing,    setSchedPricing]    = useState<PricingOpt[]>([]);
   const [schedFrequency,  setSchedFrequency]  = useState<Frequency>("weekly");
   const [schedError,      setSchedError]      = useState("");
+
+  const schedTotal = Object.values(schedCounts).reduce((s,v)=>s+v,0);
 
   // Persisted data
   const [schedules, setSchedules] = useState<ScheduledSearch[]>([]);
@@ -116,8 +117,6 @@ export default function Dashboard() {
   const timerRef     = useRef<ReturnType<typeof setInterval>|null>(null);
   const startTimeRef = useRef<number>(0);
   const currentStep  = useRef<number>(0);
-
-  const total = Object.values(counts).reduce((s,v)=>s+v,0);
 
   // ── Load schedules + history from API on mount ────────────────────────────
 
@@ -216,10 +215,6 @@ export default function Dashboard() {
     fetch("/api/history").then(r=>r.json()).then(setHistory).catch(()=>{});
   }, [startTimer, stopTimer, activateStep, finalizeSteps]);
 
-  const startPipeline = useCallback(() => {
-    startPipelineWith({ tools_per_category: counts });
-  }, [counts, startPipelineWith]);
-
   // ── Scheduler helpers ─────────────────────────────────────────────────────
 
   const toggle = <T extends string>(arr: T[], val: T): T[] =>
@@ -228,7 +223,7 @@ export default function Dashboard() {
   const validateSched = () => {
     if (!schedName.trim())           return "Please enter a search name.";
     if (!schedDate)                  return "Please select a date.";
-    if (schedCategories.length===0)  return "Select at least one category.";
+    if (schedTotal === 0)            return "Enter at least one category count greater than 0.";
     if (schedPlatforms.length===0)   return "Select at least one platform.";
     return "";
   };
@@ -238,15 +233,18 @@ export default function Dashboard() {
     if (err) { setSchedError(err); return; }
     setSchedError("");
     const body = {
-      name:schedName.trim(), date:schedDate, categories:schedCategories,
-      platforms:schedPlatforms, accessType:schedAccessType,
-      pricing:schedPricing, frequency:schedFrequency,
+      name: schedName.trim(), date: schedDate,
+      categories: CATEGORIES.filter(c => schedCounts[c] > 0),
+      counts: schedCounts,
+      platforms: schedPlatforms, accessType: schedAccessType,
+      pricing: schedPricing, frequency: schedFrequency,
     };
     const res = await fetch("/api/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     if (res.ok) {
       const entry = await res.json();
       setSchedules(prev=>[entry,...prev]);
-      setSchedName(""); setSchedDate(todayStr); setSchedCategories([]);
+      setSchedName(""); setSchedDate(todayStr);
+      setSchedCounts(Object.fromEntries(CATEGORIES.map(c=>[c,0])));
       setSchedPlatforms([]); setSchedAccessType([...ACCESS_TYPES]);
       setSchedPricing([]); setSchedFrequency("weekly");
     }
@@ -258,9 +256,10 @@ export default function Dashboard() {
   };
 
   const runScheduleNow = (s: ScheduledSearch) => {
-    const counts = Object.fromEntries(CATEGORIES.map(c=>[c, s.categories.includes(c)?1:0]));
+    const c = (s as ScheduledSearch & {counts?: Record<string,number>}).counts
+      ?? Object.fromEntries(CATEGORIES.map(cat=>[cat, s.categories.includes(cat)?1:0]));
     startPipelineWith({
-      tools_per_category: counts,
+      tools_per_category: c,
       platforms_filter: s.platforms,
       access_type_filter: s.accessType,
       pricing_filter: s.pricing,
@@ -282,43 +281,13 @@ export default function Dashboard() {
         <p className="text-slate-500 text-sm mt-1">Pipeline Dashboard — configure, run, and monitor from your browser</p>
       </header>
 
-      {/* ── Category config card ── */}
-      <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-2xl p-8 mb-5">
-        <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-5">
-          <PencilIcon />
-          Configure — Tools to find per category
-        </div>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
-          {CATEGORIES.map(cat=>(
-            <div key={cat} className="flex items-center justify-between bg-[#262b40] border border-[#343a54] rounded-xl px-3 py-2 gap-3 focus-within:border-indigo-500 transition-colors">
-              <label className="text-slate-300 text-sm flex-1 truncate">{cat}</label>
-              <input type="number" min={0} max={999} value={counts[cat]}
-                onChange={e=>setCounts(prev=>({...prev,[cat]:Math.max(0,parseInt(e.target.value)||0)}))}
-                className="w-16 bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded-md text-slate-100 text-sm text-center px-2 py-1 outline-none transition-colors"
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center justify-between mt-5 px-4 py-3 bg-[#1a1f33] border border-[#2d3148] rounded-xl">
-          <span className="text-slate-500 text-sm">Estimated tools to discover</span>
-          <span className="text-indigo-400 text-xl font-bold">{total}</span>
-        </div>
-      </section>
-
-      {/* ── Run button ── */}
-      <button onClick={startPipeline} disabled={running}
-        className="w-full max-w-3xl flex items-center justify-center gap-2 py-3 mb-5 rounded-xl text-base font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:opacity-90 hover:-translate-y-px active:translate-y-0"
-        style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)"}}>
-        <PlayIcon />Run Pipeline
-      </button>
-
-      {/* ── Schedule Search card ── */}
+      {/* ── Configure + Schedule (merged) ── */}
       <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-2xl p-8 mb-5">
         <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-5">
           <CalendarIcon />
           Schedule a Search
         </div>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
 
           {/* Name + Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -338,16 +307,26 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Categories */}
+          {/* Categories with counts */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-400 text-xs font-medium">Categories <span className="ml-1 text-slate-600 normal-case font-normal">(select one or more)</span></label>
-            <div className="flex flex-wrap gap-2">
+            <label className="text-slate-400 text-xs font-medium">
+              Tools to find per category
+              <span className="ml-2 text-slate-600 normal-case font-normal">— set to 0 to skip a category</span>
+            </label>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {CATEGORIES.map(cat=>(
-                <button key={cat} type="button" onClick={()=>setSchedCategories(p=>toggle(p,cat))}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${schedCategories.includes(cat)?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-indigo-600"}`}>
-                  {cat}
-                </button>
+                <div key={cat} className={`flex items-center justify-between bg-[#262b40] border rounded-xl px-3 py-2 gap-3 focus-within:border-indigo-500 transition-colors ${schedCounts[cat]>0?"border-indigo-600":"border-[#343a54]"}`}>
+                  <label className="text-slate-300 text-sm flex-1 truncate">{cat}</label>
+                  <input type="number" min={0} max={999} value={schedCounts[cat]}
+                    onChange={e=>setSchedCounts(prev=>({...prev,[cat]:Math.max(0,parseInt(e.target.value)||0)}))}
+                    className="w-16 bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded-md text-slate-100 text-sm text-center px-2 py-1 outline-none transition-colors"
+                  />
+                </div>
               ))}
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 bg-[#1a1f33] border border-[#2d3148] rounded-xl">
+              <span className="text-slate-500 text-sm">Total tools to discover</span>
+              <span className="text-indigo-400 text-xl font-bold">{schedTotal}</span>
             </div>
           </div>
 
@@ -405,7 +384,7 @@ export default function Dashboard() {
 
           {schedError && <p className="text-red-400 text-xs">{schedError}</p>}
 
-          <div className="flex gap-3 mt-1">
+          <div className="flex gap-3">
             <button type="button" onClick={saveSchedule}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-indigo-600 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-colors">
               <CalendarIcon small />Schedule
@@ -413,8 +392,7 @@ export default function Dashboard() {
             <button type="button"
               onClick={()=>{
                 const err=validateSched(); if(err){setSchedError(err);return;} setSchedError("");
-                const c=Object.fromEntries(CATEGORIES.map(cat=>[cat,schedCategories.includes(cat)?1:0]));
-                startPipelineWith({tools_per_category:c,platforms_filter:schedPlatforms,access_type_filter:schedAccessType,pricing_filter:schedPricing});
+                startPipelineWith({tools_per_category:schedCounts,platforms_filter:schedPlatforms,access_type_filter:schedAccessType,pricing_filter:schedPricing});
               }}
               disabled={running}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:opacity-90"
@@ -441,7 +419,13 @@ export default function Dashboard() {
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     <span className="text-xs bg-violet-900/60 text-violet-300 border border-violet-700 px-2 py-0.5 rounded-full capitalize">{s.frequency}</span>
                     <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#343a54] px-2 py-0.5 rounded-full">📅 {s.date}</span>
-                    {s.categories.map(c=><span key={c} className="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full">{c}</span>)}
+                    {/* show per-category counts if stored, otherwise fall back to category name pills */}
+                    {(s as ScheduledSearch & {counts?: Record<string,number>}).counts
+                      ? Object.entries((s as ScheduledSearch & {counts: Record<string,number>}).counts)
+                          .filter(([,v])=>v>0)
+                          .map(([cat,n])=><span key={cat} className="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full">{cat}: {n}</span>)
+                      : s.categories.map(c=><span key={c} className="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full">{c}</span>)
+                    }
                     {s.platforms.map(p=><span key={p} className="text-xs bg-cyan-900/40 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded-full">{p}</span>)}
                     {s.accessType?.map(a=><span key={a} className="text-xs bg-emerald-900/40 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full">{a}</span>)}
                     {s.pricing?.map(p=><span key={p} className="text-xs bg-amber-900/40 text-amber-300 border border-amber-800 px-2 py-0.5 rounded-full">{p}</span>)}
@@ -564,13 +548,6 @@ export default function Dashboard() {
 
 // ── Inline SVG icons ───────────────────────────────────────────────────────────
 
-function PencilIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{flexShrink:0}}>
-      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-    </svg>
-  );
-}
 function PlayIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
