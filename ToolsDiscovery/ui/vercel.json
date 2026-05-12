@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "installCommand": "cd ui && npm install",
-  "buildCommand": "cd ui && npm run build",
-  "outputDirectory": "ui/.next",
   "functions": {
     "api/run.py":       { "maxDuration": 300, "memory": 1024 },
     "api/schedules.py": { "maxDuration": 30  },
