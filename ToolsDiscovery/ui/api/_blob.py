@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 import requests
@@ -25,6 +26,10 @@ def _use_blob() -> bool:
     return bool(_token())
 
 
+def _log_err(msg: str) -> None:
+    print(f"[blob] {msg}", file=sys.stderr, flush=True)
+
+
 def read_blob(filename: str) -> list | dict | None:
     if not _use_blob():
         _LOCAL_FALLBACK_DIR.mkdir(parents=True, exist_ok=True)
@@ -35,7 +40,6 @@ def read_blob(filename: str) -> list | dict | None:
 
     try:
         headers = {"Authorization": f"Bearer {_token()}"}
-        # List blobs with exact prefix to find ours
         resp = requests.get(
             _BLOB_API,
             params={"prefix": filename, "limit": 10},
@@ -43,17 +47,19 @@ def read_blob(filename: str) -> list | dict | None:
             timeout=15,
         )
         if not resp.ok:
+            _log_err(f"list failed {resp.status_code}: {resp.text[:200]}")
             return None
         blobs = resp.json().get("blobs", [])
         match = next((b for b in blobs if b.get("pathname") == filename), None)
         if not match:
             return None
-        # Fetch the actual JSON content from the public URL
         content_resp = requests.get(match["url"], timeout=15)
         if content_resp.ok:
             return content_resp.json()
+        _log_err(f"fetch content failed {content_resp.status_code}")
         return None
-    except Exception:
+    except Exception as exc:
+        _log_err(f"read_blob exception: {exc}")
         return None
 
 
@@ -68,8 +74,9 @@ def write_blob(filename: str, data: list | dict) -> bool:
     try:
         headers = {
             "Authorization": f"Bearer {_token()}",
+            "access": "public",
             "content-type": "application/json",
-            "x-add-random-suffix": "0",   # keep the same URL on every write
+            "x-add-random-suffix": "0",
             "x-cache-control-max-age": "0",
         }
         resp = requests.put(
@@ -78,6 +85,10 @@ def write_blob(filename: str, data: list | dict) -> bool:
             headers=headers,
             timeout=15,
         )
-        return resp.ok
-    except Exception:
+        if not resp.ok:
+            _log_err(f"write_blob PUT failed {resp.status_code}: {resp.text[:300]}")
+            return False
+        return True
+    except Exception as exc:
+        _log_err(f"write_blob exception: {exc}")
         return False
