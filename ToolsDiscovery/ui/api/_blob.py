@@ -53,7 +53,9 @@ def read_blob(filename: str) -> list | dict | None:
         match = next((b for b in blobs if b.get("pathname") == filename), None)
         if not match:
             return None
-        content_resp = requests.get(match["url"], timeout=15)
+        # Use downloadUrl if present (private blobs), otherwise url
+        fetch_url = match.get("downloadUrl") or match.get("url")
+        content_resp = requests.get(fetch_url, headers=headers, timeout=15)
         if content_resp.ok:
             return content_resp.json()
         _log_err(f"fetch content failed {content_resp.status_code}")
@@ -74,7 +76,7 @@ def write_blob(filename: str, data: list | dict) -> bool:
     try:
         headers = {
             "Authorization": f"Bearer {_token()}",
-            "access": "public",
+            "access": "private",
             "content-type": "application/json",
             "x-add-random-suffix": "0",
             "x-cache-control-max-age": "0",
