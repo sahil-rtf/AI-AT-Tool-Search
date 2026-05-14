@@ -12,7 +12,10 @@ body {
   background: #0f1117;
   color: #e2e8f0;
   min-height: 100vh;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Custom scrollbar */

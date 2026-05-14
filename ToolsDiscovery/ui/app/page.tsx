@@ -275,15 +275,15 @@ export default function Dashboard() {
 
       {/* Header */}
       <header className="text-center mb-10">
-        <h1 className="text-3xl font-bold" style={{background:"linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#06b6d4 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>
+        <h1 className="text-3xl font-bold text-slate-100 tracking-tight">
           AT Tool Discovery
         </h1>
-        <p className="text-slate-500 text-sm mt-1">Pipeline Dashboard — configure, run, and monitor from your browser</p>
+        <p className="text-slate-500 text-sm mt-1.5">Pipeline Dashboard — configure, run, and monitor from your browser</p>
       </header>
 
       {/* ── Configure + Schedule (merged) ── */}
-      <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-2xl p-8 mb-5">
-        <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-5">
+      <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-xl p-8 mb-5">
+        <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-6">
           <CalendarIcon />
           Schedule a Search
         </div>
@@ -315,18 +315,18 @@ export default function Dashboard() {
             </label>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {CATEGORIES.map(cat=>(
-                <div key={cat} className={`flex items-center justify-between bg-[#262b40] border rounded-xl px-3 py-2 gap-3 focus-within:border-indigo-500 transition-colors ${schedCounts[cat]>0?"border-indigo-600":"border-[#343a54]"}`}>
+                <div key={cat} className={`flex items-center justify-between bg-[#262b40] border rounded-lg px-3 py-2 gap-3 focus-within:border-indigo-500 transition-colors ${schedCounts[cat]>0?"border-indigo-600":"border-[#3d4466]"}`}>
                   <label className="text-slate-300 text-sm flex-1 truncate">{cat}</label>
                   <input type="number" min={0} max={999} value={schedCounts[cat]}
                     onChange={e=>setSchedCounts(prev=>({...prev,[cat]:Math.max(0,parseInt(e.target.value)||0)}))}
-                    className="w-16 bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded-md text-slate-100 text-sm text-center px-2 py-1 outline-none transition-colors"
+                    className="w-16 bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded text-slate-100 text-sm text-center px-2 py-1 outline-none transition-colors"
                   />
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between px-4 py-3 bg-[#1a1f33] border border-[#2d3148] rounded-xl">
+            <div className="flex items-center justify-between px-4 py-3 bg-[#1a1f33] border border-[#2d3148] rounded-lg">
               <span className="text-slate-500 text-sm">Total tools to discover</span>
-              <span className="text-indigo-400 text-xl font-bold">{schedTotal}</span>
+              <span className="text-slate-100 text-xl font-bold">{schedTotal}</span>
             </div>
           </div>
 
@@ -336,7 +336,7 @@ export default function Dashboard() {
             <div className="flex flex-wrap gap-2">
               {PLATFORMS.map(p=>(
                 <button key={p} type="button" onClick={()=>setSchedPlatforms(prev=>toggle(prev,p))}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${schedPlatforms.includes(p)?"bg-cyan-700 border-cyan-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-cyan-600"}`}>
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${schedPlatforms.includes(p)?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
                   {p}
                 </button>
               ))}
@@ -349,7 +349,7 @@ export default function Dashboard() {
             <div className="flex gap-3">
               {ACCESS_TYPES.map(a=>(
                 <button key={a} type="button" onClick={()=>setSchedAccessType(p=>toggle(p,a))}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${schedAccessType.includes(a)?"bg-emerald-700 border-emerald-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-emerald-600"}`}>
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${schedAccessType.includes(a)?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
                   {a}
                 </button>
               ))}
@@ -362,7 +362,7 @@ export default function Dashboard() {
             <div className="flex flex-wrap gap-2">
               {PRICING_OPTIONS.map(p=>(
                 <button key={p} type="button" onClick={()=>setSchedPricing(prev=>toggle(prev,p))}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${schedPricing.includes(p)?"bg-amber-600 border-amber-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-amber-600"}`}>
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${schedPricing.includes(p)?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
                   {p}
                 </button>
               ))}
@@ -375,7 +375,7 @@ export default function Dashboard() {
             <div className="flex gap-3">
               {FREQUENCIES.map(f=>(
                 <button key={f} type="button" onClick={()=>setSchedFrequency(f)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-colors ${schedFrequency===f?"bg-violet-700 border-violet-500 text-white":"bg-[#262b40] border-[#343a54] text-slate-400 hover:border-violet-600"}`}>
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-colors ${schedFrequency===f?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
                   {f}
                 </button>
               ))}
@@ -386,7 +386,7 @@ export default function Dashboard() {
 
           <div className="flex gap-3">
             <button type="button" onClick={saveSchedule}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-indigo-600 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-colors">
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-[#3d4466] text-slate-300 hover:border-slate-400 hover:text-white transition-colors bg-[#262b40]">
               <CalendarIcon small />Schedule
             </button>
             <button type="button"
@@ -395,8 +395,7 @@ export default function Dashboard() {
                 startPipelineWith({tools_per_category:schedCounts,platforms_filter:schedPlatforms,access_type_filter:schedAccessType,pricing_filter:schedPricing});
               }}
               disabled={running}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:opacity-90"
-              style={{background:"linear-gradient(135deg,#0891b2,#6366f1)"}}>
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <PlayIcon />Run Now
             </button>
           </div>
@@ -405,30 +404,30 @@ export default function Dashboard() {
 
       {/* ── Scheduled searches list ── */}
       {schedules.length > 0 && (
-        <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-2xl p-8 mb-5">
+        <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-xl p-8 mb-5">
           <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">
             <ClockIcon />
             Scheduled Searches
-            <span className="ml-auto bg-indigo-900 text-indigo-300 text-xs font-bold px-2 py-0.5 rounded-full">{schedules.length}</span>
+            <span className="ml-auto bg-[#262b40] text-slate-400 text-xs font-bold px-2 py-0.5 rounded border border-[#3d4466]">{schedules.length}</span>
           </div>
           <div className="flex flex-col gap-3">
             {schedules.map(s=>(
-              <div key={s.id} className="bg-[#262b40] border border-[#343a54] rounded-xl px-4 py-3 flex items-start justify-between gap-3">
+              <div key={s.id} className="bg-[#262b40] border border-[#343a54] rounded-lg px-4 py-3 flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-1 min-w-0 flex-1">
                   <span className="text-slate-200 text-sm font-semibold truncate">{s.name}</span>
                   <div className="flex flex-wrap gap-1.5 mt-1">
-                    <span className="text-xs bg-violet-900/60 text-violet-300 border border-violet-700 px-2 py-0.5 rounded-full capitalize">{s.frequency}</span>
-                    <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#343a54] px-2 py-0.5 rounded-full">📅 {s.date}</span>
+                    <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded capitalize">{s.frequency}</span>
+                    <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{s.date}</span>
                     {/* show per-category counts if stored, otherwise fall back to category name pills */}
                     {(s as ScheduledSearch & {counts?: Record<string,number>}).counts
                       ? Object.entries((s as ScheduledSearch & {counts: Record<string,number>}).counts)
                           .filter(([,v])=>v>0)
-                          .map(([cat,n])=><span key={cat} className="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full">{cat}: {n}</span>)
-                      : s.categories.map(c=><span key={c} className="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full">{c}</span>)
+                          .map(([cat,n])=><span key={cat} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{cat}: {n}</span>)
+                      : s.categories.map(c=><span key={c} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{c}</span>)
                     }
-                    {s.platforms.map(p=><span key={p} className="text-xs bg-cyan-900/40 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded-full">{p}</span>)}
-                    {s.accessType?.map(a=><span key={a} className="text-xs bg-emerald-900/40 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full">{a}</span>)}
-                    {s.pricing?.map(p=><span key={p} className="text-xs bg-amber-900/40 text-amber-300 border border-amber-800 px-2 py-0.5 rounded-full">{p}</span>)}
+                    {s.platforms.map(p=><span key={p} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{p}</span>)}
+                    {s.accessType?.map(a=><span key={a} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{a}</span>)}
+                    {s.pricing?.map(p=><span key={p} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{p}</span>)}
                   </div>
                 </div>
                 <div className="flex gap-2 flex-shrink-0 mt-0.5">
@@ -448,12 +447,12 @@ export default function Dashboard() {
       )}
 
       {/* ── Progress card ── */}
-      <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-2xl p-8 mb-5">
-        <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-5">
+      <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-xl p-8 mb-5">
+        <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-6">
           <TableIcon />Pipeline Progress
         </div>
         <div className="flex items-center gap-3 mb-5">
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${badge.pill}`}>
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold uppercase tracking-wider ${badge.pill}`}>
             <span className={badge.dot}>●</span>{badge.label}
           </span>
           {elapsed && <span className="text-slate-500 text-xs">{elapsed}</span>}
@@ -469,7 +468,7 @@ export default function Dashboard() {
             );
           })}
         </div>
-        <div className="bg-[#0a0d14] border border-[#1e2435] rounded-xl p-4 h-80 overflow-y-auto font-mono text-xs leading-relaxed">
+        <div className="bg-[#0a0d14] border border-[#1e2435] rounded-lg p-4 h-80 overflow-y-auto font-mono text-xs leading-relaxed">
           {logs.length===0
             ? <span className="text-slate-700">Waiting for pipeline to start…</span>
             : logs.map((line,i)=><div key={i} className={logColor[line.kind]}>{line.text}</div>)
@@ -478,7 +477,7 @@ export default function Dashboard() {
         </div>
         {sheetUrl && (
           <a href={sheetUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 mt-4 px-4 py-3 bg-green-950 border border-green-800 rounded-xl text-green-400 text-sm font-medium hover:bg-green-900 transition-colors">
+            className="flex items-center gap-2 mt-4 px-4 py-3 bg-[#1a1f33] border border-[#2d3148] rounded-lg text-green-400 text-sm font-medium hover:bg-[#262b40] transition-colors">
             <ExternalLinkIcon />Open AI_LEADS in Google Sheets
           </a>
         )}
@@ -486,18 +485,18 @@ export default function Dashboard() {
 
       {/* ── Run History ── */}
       {dataLoaded && (
-        <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-2xl p-8">
+        <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-xl p-8">
           <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">
             <HistoryIcon />
             Run History
-            {history.length>0 && <span className="ml-auto bg-slate-800 text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">{history.length}</span>}
+            {history.length>0 && <span className="ml-auto bg-[#262b40] text-slate-400 text-xs font-bold px-2 py-0.5 rounded border border-[#3d4466]">{history.length}</span>}
           </div>
           {history.length===0
             ? <p className="text-slate-600 text-sm">No runs yet. Run the pipeline to see history here.</p>
             : (
               <div className="flex flex-col gap-3">
                 {history.map(run=>(
-                  <div key={run.id} className="bg-[#262b40] border border-[#343a54] rounded-xl px-4 py-3">
+                  <div key={run.id} className="bg-[#262b40] border border-[#343a54] rounded-lg px-4 py-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${run.status==="done"?"bg-green-400":"bg-red-400"}`}/>
@@ -507,7 +506,7 @@ export default function Dashboard() {
                         {run.toolsFound>0 && (
                           <span className="text-xs text-emerald-400 font-semibold">{run.toolsFound} tools found</span>
                         )}
-                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded-full border ${run.status==="done"?"bg-green-950 text-green-400 border-green-800":"bg-red-950 text-red-400 border-red-900"}`}>
+                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded border ${run.status==="done"?"bg-green-950 text-green-400 border-green-800":"bg-red-950 text-red-400 border-red-900"}`}>
                           {run.status}
                         </span>
                       </div>
@@ -518,13 +517,13 @@ export default function Dashboard() {
                         {Object.entries((run.params.tools_per_category as Record<string,number>)||{})
                           .filter(([,v])=>v>0)
                           .map(([cat,count])=>(
-                            <span key={cat} className="text-xs bg-indigo-900/40 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full">{cat}: {count}</span>
+                            <span key={cat} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{cat}: {count}</span>
                           ))}
                         {(run.params.platforms_filter as string[]||[]).map(p=>(
-                          <span key={p} className="text-xs bg-cyan-900/30 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded-full">{p}</span>
+                          <span key={p} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{p}</span>
                         ))}
                         {(run.params.pricing_filter as string[]||[]).map(p=>(
-                          <span key={p} className="text-xs bg-amber-900/30 text-amber-300 border border-amber-800 px-2 py-0.5 rounded-full">{p}</span>
+                          <span key={p} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{p}</span>
                         ))}
                       </div>
                     )}
@@ -557,7 +556,7 @@ function PlayIcon() {
 }
 function TableIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
     </svg>
   );
@@ -573,7 +572,7 @@ function ExternalLinkIcon() {
 function CalendarIcon({small}:{small?:boolean}) {
   const s=small?14:15;
   return (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="3" y="4" width="18" height="18" rx="2"/>
       <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
       <line x1="3" y1="10" x2="21" y2="10"/>
@@ -582,14 +581,14 @@ function CalendarIcon({small}:{small?:boolean}) {
 }
 function ClockIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
     </svg>
   );
 }
 function HistoryIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
     </svg>
   );
