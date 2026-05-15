@@ -226,7 +226,7 @@ export default function Dashboard() {
 
           if (msg.startsWith("STATUS:")) {
             const st = msg.split(":")[1];
-            if (st==="done")  { setStatus("done");  finalizeSteps(true);  stopTimer(); setRunning(false); setHistory(h=>[...h]); }
+            if (st==="done")  { setStatus("done");  finalizeSteps(true);  stopTimer(); setRunning(false); }
             if (st==="error") { setStatus("error"); finalizeSteps(false); stopTimer(); setRunning(false); }
             continue;
           }
@@ -241,8 +241,14 @@ export default function Dashboard() {
       setStatus("error"); stopTimer(); setRunning(false);
     }
 
-    // Refresh history after run
-    fetch("/api/history").then(r=>r.json()).then(setHistory).catch(()=>{});
+    // Refresh history + schedules after run (schedules get lastRunAt/nextRunAt updated server-side)
+    Promise.all([
+      fetch("/api/history").then(r=>r.json()).catch(()=>null),
+      fetch("/api/schedules").then(r=>r.json()).catch(()=>null),
+    ]).then(([hist, scheds]) => {
+      if (hist)   setHistory(hist);
+      if (scheds) setSchedules(scheds);
+    });
   }, [startTimer, stopTimer, activateStep, finalizeSteps]);
 
   // ── Scheduler helpers ─────────────────────────────────────────────────────
@@ -352,6 +358,8 @@ export default function Dashboard() {
       if (autoRunNow) {
         runScheduleNow(entry);
       }
+      // Re-fetch schedules from server to ensure the saved entry is authoritative
+      fetch("/api/schedules").then(r=>r.json()).then(setSchedules).catch(()=>{});
       setShowAutoStaging(false);
       setAutoConfirming(false);
       resetForm();

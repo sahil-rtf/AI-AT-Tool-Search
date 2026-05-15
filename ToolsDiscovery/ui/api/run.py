@@ -126,28 +126,45 @@ class handler(BaseHTTPRequestHandler):
 
         # Persist run history to Vercel Blob
         finished_at = datetime.now(timezone.utc).isoformat()
+        schedule_id = config.get("schedule_id")
+
+        # Determine source and schedule name for history record
+        run_source = "manual"
+        schedule_name = None
+        if schedule_id:
+            try:
+                all_schedules_pre = read_blob("schedules.json") or []
+                matched = next((s for s in all_schedules_pre if s.get("id") == schedule_id), None)
+                if matched:
+                    run_source = "cron"
+                    schedule_name = matched.get("name")
+            except Exception:
+                pass
+
         try:
             history = read_blob("run_history.json") or []
-            history.insert(0, {
+            record = {
                 "id": run_id,
                 "startedAt": started_at,
                 "finishedAt": finished_at,
                 "status": "done" if success else "error",
                 "params": config,
                 "toolsFound": tools_found,
-                "source": "manual",
+                "source": run_source,
                 "sheetUrl": (
                     f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit"
                     if SPREADSHEET_ID else ""
                 ),
                 "logs": logs[-100:],
-            })
+            }
+            if schedule_name:
+                record["scheduleName"] = schedule_name
+            history.insert(0, record)
             write_blob("run_history.json", history[:50])
         except Exception:
             pass
 
         # If run came from a saved schedule, update its lastRunAt / nextRunAt
-        schedule_id = config.get("schedule_id")
         if schedule_id:
             try:
                 from datetime import timedelta as _td
