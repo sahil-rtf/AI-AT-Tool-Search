@@ -471,23 +471,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Frequency — only shown when user has NOT yet opened staging */}
-          {!showAutoStaging && (
-          <div className="flex flex-col gap-2">
-            <label className="text-slate-400 text-xs font-medium">
-              Auto-run Frequency
-              <span className="ml-2 text-slate-600 normal-case font-normal">— only needed for auto-schedule</span>
-            </label>
-            <div className="flex gap-3">
-              {FREQUENCIES.map(f=>(
-                <button key={f} type="button" onClick={()=>setSchedFrequency(f)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-colors ${schedFrequency===f?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
-          )}
 
           {schedError && <p className="text-red-400 text-xs">{schedError}</p>}
           {conflictWarning && (
