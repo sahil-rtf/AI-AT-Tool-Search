@@ -424,10 +424,10 @@ export default function Dashboard() {
               {CATEGORIES.map(cat=>(
                 <div key={cat} className={`flex items-center justify-between bg-[#262b40] border rounded-lg px-3 py-2 gap-3 focus-within:border-indigo-500 transition-colors ${schedCounts[cat]>0?"border-indigo-600":"border-[#3d4466]"}`}>
                   <label className="text-slate-300 text-sm flex-1 truncate">{cat}</label>
-                  <input type="number" min={0} max={999}
+                  <input type="number" min={0} max={10}
                     value={schedCounts[cat] === 0 ? "" : schedCounts[cat]}
                     placeholder="0"
-                    onChange={e=>setSchedCounts(prev=>({...prev,[cat]:Math.max(0,parseInt(e.target.value)||0)}))}
+                    onChange={e=>setSchedCounts(prev=>({...prev,[cat]:Math.min(10,Math.max(0,parseInt(e.target.value)||0))}))}
                     onBlur={e=>{ if(e.target.value==="") setSchedCounts(prev=>({...prev,[cat]:0})); }}
                     className="w-16 bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded text-slate-100 text-sm text-center px-2 py-1 outline-none transition-colors placeholder:text-slate-600"
                   />
