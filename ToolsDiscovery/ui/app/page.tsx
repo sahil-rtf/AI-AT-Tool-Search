@@ -84,6 +84,27 @@ function fmtDate(iso: string) {
   try { return new Date(iso).toLocaleString(); } catch { return iso; }
 }
 
+function computeNextRun(startDate: string, frequency: Frequency): Date {
+  const base = new Date(`${startDate}T09:00:00Z`);
+  const now   = new Date();
+  if (base > now) return base;
+  // advance until future
+  const d = new Date(base);
+  while (d <= now) {
+    if (frequency === "daily")   d.setUTCDate(d.getUTCDate() + 1);
+    else if (frequency === "weekly")  d.setUTCDate(d.getUTCDate() + 7);
+    else                              d.setUTCMonth(d.getUTCMonth() + 1);
+  }
+  return d;
+}
+
+function fmtNextRun(d: Date): string {
+  return d.toLocaleString(undefined, {
+    weekday:"long", year:"numeric", month:"long", day:"numeric",
+    hour:"2-digit", minute:"2-digit", timeZoneName:"short",
+  });
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -107,6 +128,11 @@ export default function Dashboard() {
   const [schedFrequency,  setSchedFrequency]  = useState<Frequency>("weekly");
   const [schedError,      setSchedError]      = useState("");
   const [conflictWarning, setConflictWarning] = useState("");
+
+  // Auto-schedule staging state
+  const [showAutoStaging,  setShowAutoStaging]  = useState(false);
+  const [autoRunNow,       setAutoRunNow]       = useState<boolean|null>(null);
+  const [autoConfirming,   setAutoConfirming]   = useState(false);
 
   const schedTotal = Object.values(schedCounts).reduce((s,v)=>s+v,0);
 
@@ -279,9 +305,9 @@ export default function Dashboard() {
     }
   };
 
-  const saveSchedule = async () => {
+  const saveSchedule = async (): Promise<ScheduledSearch|null> => {
     const err = validateSchedule();
-    if (err) { setSchedError(err); return; }
+    if (err) { setSchedError(err); return null; }
     setSchedError("");
     const body = {
       name: schedName.trim(), date: schedDate,
@@ -294,13 +320,9 @@ export default function Dashboard() {
     if (res.ok) {
       const entry = await res.json();
       setSchedules(prev=>[entry,...prev]);
-      resetForm();
+      return entry;
     }
-  };
-
-  const deleteSchedule = async (id: string) => {
-    await fetch(`/api/schedules?id=${id}`,{method:"DELETE"});
-    setSchedules(prev=>prev.filter(s=>s.id!==id));
+    return null;
   };
 
   const runScheduleNow = (s: ScheduledSearch) => {
@@ -312,6 +334,35 @@ export default function Dashboard() {
       pricing_filter: s.pricing,
       schedule_id: s.id,
     });
+  };
+
+  const openAutoStaging = () => {
+    const err = validateSchedule();
+    if (err) { setSchedError(err); return; }
+    setSchedError("");
+    _checkConflict(schedDate);
+    setAutoRunNow(null);
+    setShowAutoStaging(true);
+  };
+
+  const confirmAutoSchedule = async () => {
+    setAutoConfirming(true);
+    const entry = await saveSchedule();
+    if (entry) {
+      if (autoRunNow) {
+        runScheduleNow(entry);
+      }
+      setShowAutoStaging(false);
+      setAutoConfirming(false);
+      resetForm();
+    } else {
+      setAutoConfirming(false);
+    }
+  };
+
+  const deleteSchedule = async (id: string) => {
+    await fetch(`/api/schedules?id=${id}`,{method:"DELETE"});
+    setSchedules(prev=>prev.filter(s=>s.id!==id));
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -420,7 +471,8 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Frequency */}
+          {/* Frequency — only shown when user has NOT yet opened staging */}
+          {!showAutoStaging && (
           <div className="flex flex-col gap-2">
             <label className="text-slate-400 text-xs font-medium">
               Auto-run Frequency
@@ -435,6 +487,7 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
+          )}
 
           {schedError && <p className="text-red-400 text-xs">{schedError}</p>}
           {conflictWarning && (
@@ -443,18 +496,128 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* ── Auto-Schedule Staging Panel ── */}
+          {showAutoStaging && (() => {
+            const nextRun = computeNextRun(schedDate, schedFrequency);
+            const activeCats = CATEGORIES.filter(c => schedCounts[c] > 0);
+            return (
+              <div className="flex flex-col gap-4 bg-[#131929] border border-indigo-800/60 rounded-xl p-5">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-indigo-400 text-xs font-semibold uppercase tracking-widest">
+                    <CalendarIcon small />Auto-Schedule Staging
+                  </div>
+                  <button type="button" onClick={()=>setShowAutoStaging(false)}
+                    className="text-slate-600 hover:text-slate-300 text-xs transition-colors">✕ Cancel</button>
+                </div>
+
+                {/* Frequency selector */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-slate-400 text-xs font-medium">Repeat Frequency</label>
+                  <div className="flex gap-3">
+                    {FREQUENCIES.map(f=>(
+                      <button key={f} type="button" onClick={()=>setSchedFrequency(f)}
+                        className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-colors ${schedFrequency===f?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Config summary */}
+                <div className="flex flex-col gap-2">
+                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Configuration</p>
+                  <div className="bg-[#0f1117] border border-[#2d3148] rounded-lg px-4 py-3 flex flex-col gap-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Name</span>
+                      <span className="text-slate-200 font-medium">{schedName.trim()}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Frequency</span>
+                      <span className="text-indigo-300 font-semibold capitalize">{schedFrequency}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Start date</span>
+                      <span className="text-slate-200">{schedDate}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Platforms</span>
+                      <span className="text-slate-200">{schedPlatforms.join(", ") || "—"}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Categories</span>
+                      <span className="text-slate-200">{activeCats.map(c=>`${c}: ${schedCounts[c]}`).join(", ")}</span>
+                    </div>
+                    {schedPricing.length > 0 && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500">Pricing</span>
+                        <span className="text-slate-200">{schedPricing.join(", ")}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Schedule info */}
+                <div className="flex flex-col gap-1.5 bg-indigo-950/40 border border-indigo-800/50 rounded-lg px-4 py-3">
+                  <p className="text-indigo-300 text-xs font-semibold flex items-center gap-1.5">
+                    <ClockIcon />Auto-schedule runs every job at <span className="text-white">9:00 AM UTC</span>
+                  </p>
+                  <p className="text-slate-400 text-xs">
+                    Next scheduled run: <span className="text-indigo-300 font-medium">{fmtNextRun(nextRun)}</span>
+                  </p>
+                </div>
+
+                {/* Run-now choice */}
+                <div className="flex flex-col gap-2">
+                  <p className="text-slate-400 text-xs font-medium">Would you like to run now, or wait for the scheduled time?</p>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={()=>setAutoRunNow(true)}
+                      className={`flex-1 py-2.5 rounded-lg text-xs font-semibold border transition-colors flex items-center justify-center gap-1.5 ${autoRunNow===true?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
+                      <PlayIcon />Run now &amp; schedule
+                    </button>
+                    <button type="button" onClick={()=>setAutoRunNow(false)}
+                      className={`flex-1 py-2.5 rounded-lg text-xs font-semibold border transition-colors ${autoRunNow===false?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
+                      Let it run automatically
+                    </button>
+                  </div>
+                  {autoRunNow !== null && (
+                    <p className="text-slate-500 text-xs">
+                      {autoRunNow
+                        ? "The pipeline will start immediately and also be saved for automatic runs."
+                        : `The pipeline will start automatically at ${fmtNextRun(nextRun)}.`}
+                    </p>
+                  )}
+                </div>
+
+                {/* Confirm button */}
+                <button type="button"
+                  onClick={confirmAutoSchedule}
+                  disabled={autoRunNow === null || autoConfirming}
+                  className="w-full py-3 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+                  {autoConfirming
+                    ? "Saving…"
+                    : autoRunNow
+                      ? <><PlayIcon />Confirm &amp; Run Now</>
+                      : <><CalendarIcon small />Confirm Auto-Schedule</>}
+                </button>
+              </div>
+            );
+          })()}
+
           <div className="flex gap-3 flex-wrap">
             <button type="button" onClick={saveConfigOnly}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-[#3d4466] text-slate-300 hover:border-slate-400 hover:text-white transition-colors bg-[#262b40]"
               title="Save as a reusable config (no automatic runs)">
               <BookmarkIcon />Save Config
             </button>
+            {!showAutoStaging && (
             <button type="button"
-              onClick={()=>{ _checkConflict(schedDate); saveSchedule(); }}
+              onClick={openAutoStaging}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-indigo-700 text-indigo-300 hover:border-indigo-500 hover:text-white transition-colors bg-[#262b40]"
               title="Save and auto-run on start date, then repeat at chosen frequency">
               <CalendarIcon small />Auto-Schedule
             </button>
+            )}
             <button type="button"
               onClick={()=>{
                 const err=validateSched(); if(err){setSchedError(err);return;} setSchedError("");
