@@ -1,7 +1,9 @@
 {
   "version": 2,
+  "crons": [{ "path": "/api/cron", "schedule": "0 9 * * *" }],
   "functions": {
     "api/run.py":       { "maxDuration": 300, "memory": 1024 },
+    "api/cron.py":      { "maxDuration": 300, "memory": 1024 },
     "api/schedules.py": { "maxDuration": 30  },
     "api/history.py":   { "maxDuration": 30  },
     "api/status.py":    { "maxDuration": 10  }

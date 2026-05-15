@@ -43,15 +43,18 @@ interface LogLine { text: string; kind: "normal"|"error"|"step"|"ok"|"warn"; }
 
 interface ScheduledSearch {
   id: string; name: string; date: string;
-  categories: string[]; platforms: Platform[];
-  accessType: AccessType[]; pricing: PricingOpt[];
-  frequency: Frequency; createdAt: string;
+  type: "schedule" | "config";
+  categories: string[]; counts: Record<string,number>;
+  platforms: Platform[]; accessType: AccessType[];
+  pricing: PricingOpt[]; frequency: Frequency;
+  createdAt: string; lastRunAt: string | null; nextRunAt: string | null;
 }
 
 interface RunRecord {
   id: string; startedAt: string; finishedAt: string;
   status: "done"|"error"; params: Record<string,unknown>;
   toolsFound: number; sheetUrl: string;
+  source?: "manual"|"cron"; scheduleName?: string;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -103,6 +106,7 @@ export default function Dashboard() {
   const [schedPricing,    setSchedPricing]    = useState<PricingOpt[]>([]);
   const [schedFrequency,  setSchedFrequency]  = useState<Frequency>("weekly");
   const [schedError,      setSchedError]      = useState("");
+  const [conflictWarning, setConflictWarning] = useState("");
 
   const schedTotal = Object.values(schedCounts).reduce((s,v)=>s+v,0);
 
@@ -222,14 +226,61 @@ export default function Dashboard() {
 
   const validateSched = () => {
     if (!schedName.trim())           return "Please enter a search name.";
-    if (!schedDate)                  return "Please select a date.";
     if (schedTotal === 0)            return "Enter at least one category count greater than 0.";
     if (schedPlatforms.length===0)   return "Select at least one platform.";
     return "";
   };
 
-  const saveSchedule = async () => {
+  const validateSchedule = () => {
+    const base = validateSched();
+    if (base) return base;
+    if (!schedDate)                  return "Please select a start date for the auto-schedule.";
+    return "";
+  };
+
+  const _checkConflict = (date: string) => {
+    const sameDay = schedules.filter(
+      s => s.type === "schedule" && s.nextRunAt && s.nextRunAt.startsWith(date)
+    );
+    if (sameDay.length > 0) {
+      setConflictWarning(
+        `⚠ Another auto-schedule ("${sameDay[0].name}") already runs on ${date}. ` +
+        `Vercel Cron runs once per day — both will execute, but total runtime may approach the 300 s limit. ` +
+        `Consider changing the date.`
+      );
+    } else {
+      setConflictWarning("");
+    }
+  };
+
+  const resetForm = () => {
+    setSchedName(""); setSchedDate(todayStr);
+    setSchedCounts(Object.fromEntries(CATEGORIES.map(c=>[c,0])));
+    setSchedPlatforms([]); setSchedAccessType([...ACCESS_TYPES]);
+    setSchedPricing([]); setSchedFrequency("weekly");
+    setConflictWarning("");
+  };
+
+  const saveConfigOnly = async () => {
     const err = validateSched();
+    if (err) { setSchedError(err); return; }
+    setSchedError("");
+    const body = {
+      name: schedName.trim(), date: "", frequency: "",
+      categories: CATEGORIES.filter(c => schedCounts[c] > 0),
+      counts: schedCounts, platforms: schedPlatforms,
+      accessType: schedAccessType, pricing: schedPricing,
+    };
+    const res = await fetch("/api/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if (res.ok) {
+      const entry = await res.json();
+      setSchedules(prev=>[entry,...prev]);
+      resetForm();
+    }
+  };
+
+  const saveSchedule = async () => {
+    const err = validateSchedule();
     if (err) { setSchedError(err); return; }
     setSchedError("");
     const body = {
@@ -243,10 +294,7 @@ export default function Dashboard() {
     if (res.ok) {
       const entry = await res.json();
       setSchedules(prev=>[entry,...prev]);
-      setSchedName(""); setSchedDate(todayStr);
-      setSchedCounts(Object.fromEntries(CATEGORIES.map(c=>[c,0])));
-      setSchedPlatforms([]); setSchedAccessType([...ACCESS_TYPES]);
-      setSchedPricing([]); setSchedFrequency("weekly");
+      resetForm();
     }
   };
 
@@ -256,13 +304,13 @@ export default function Dashboard() {
   };
 
   const runScheduleNow = (s: ScheduledSearch) => {
-    const c = (s as ScheduledSearch & {counts?: Record<string,number>}).counts
-      ?? Object.fromEntries(CATEGORIES.map(cat=>[cat, s.categories.includes(cat)?1:0]));
+    const c = s.counts ?? Object.fromEntries(CATEGORIES.map(cat=>[cat, s.categories.includes(cat)?1:0]));
     startPipelineWith({
       tools_per_category: c,
       platforms_filter: s.platforms,
       access_type_filter: s.accessType,
       pricing_filter: s.pricing,
+      schedule_id: s.id,
     });
   };
 
@@ -371,7 +419,10 @@ export default function Dashboard() {
 
           {/* Frequency */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-400 text-xs font-medium">Frequency</label>
+            <label className="text-slate-400 text-xs font-medium">
+              Auto-run Frequency
+              <span className="ml-2 text-slate-600 normal-case font-normal">— only needed for auto-schedule</span>
+            </label>
             <div className="flex gap-3">
               {FREQUENCIES.map(f=>(
                 <button key={f} type="button" onClick={()=>setSchedFrequency(f)}
@@ -383,11 +434,23 @@ export default function Dashboard() {
           </div>
 
           {schedError && <p className="text-red-400 text-xs">{schedError}</p>}
+          {conflictWarning && (
+            <div className="flex gap-2 px-3 py-2.5 bg-amber-950/50 border border-amber-800 rounded-lg text-amber-400 text-xs leading-relaxed">
+              <WarningIcon /><span>{conflictWarning}</span>
+            </div>
+          )}
 
-          <div className="flex gap-3">
-            <button type="button" onClick={saveSchedule}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-[#3d4466] text-slate-300 hover:border-slate-400 hover:text-white transition-colors bg-[#262b40]">
-              <CalendarIcon small />Schedule
+          <div className="flex gap-3 flex-wrap">
+            <button type="button" onClick={saveConfigOnly}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-[#3d4466] text-slate-300 hover:border-slate-400 hover:text-white transition-colors bg-[#262b40]"
+              title="Save as a reusable config (no automatic runs)">
+              <BookmarkIcon />Save Config
+            </button>
+            <button type="button"
+              onClick={()=>{ _checkConflict(schedDate); saveSchedule(); }}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-indigo-700 text-indigo-300 hover:border-indigo-500 hover:text-white transition-colors bg-[#262b40]"
+              title="Save and auto-run on start date, then repeat at chosen frequency">
+              <CalendarIcon small />Auto-Schedule
             </button>
             <button type="button"
               onClick={()=>{
@@ -407,21 +470,36 @@ export default function Dashboard() {
         <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-xl p-8 mb-5">
           <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">
             <ClockIcon />
-            Scheduled Searches
+            Saved Searches
             <span className="ml-auto bg-[#262b40] text-slate-400 text-xs font-bold px-2 py-0.5 rounded border border-[#3d4466]">{schedules.length}</span>
           </div>
           <div className="flex flex-col gap-3">
             {schedules.map(s=>(
               <div key={s.id} className="bg-[#262b40] border border-[#343a54] rounded-lg px-4 py-3 flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-1 min-w-0 flex-1">
-                  <span className="text-slate-200 text-sm font-semibold truncate">{s.name}</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-slate-200 text-sm font-semibold truncate">{s.name}</span>
+                    {s.type === "schedule"
+                      ? <span className="text-xs bg-indigo-900/60 text-indigo-400 border border-indigo-700 px-2 py-0.5 rounded font-medium">Auto</span>
+                      : <span className="text-xs bg-slate-800 text-slate-400 border border-[#3d4466] px-2 py-0.5 rounded font-medium">Config</span>
+                    }
+                  </div>
                   <div className="flex flex-wrap gap-1.5 mt-1">
-                    <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded capitalize">{s.frequency}</span>
-                    <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{s.date}</span>
-                    {/* show per-category counts if stored, otherwise fall back to category name pills */}
-                    {(s as ScheduledSearch & {counts?: Record<string,number>}).counts
-                      ? Object.entries((s as ScheduledSearch & {counts: Record<string,number>}).counts)
-                          .filter(([,v])=>v>0)
+                    {s.type === "schedule" && s.frequency && (
+                      <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded capitalize">{s.frequency}</span>
+                    )}
+                    {s.nextRunAt && s.type === "schedule" && (
+                      <span className="text-xs bg-[#1a1f33] text-indigo-400 border border-indigo-900 px-2 py-0.5 rounded">
+                        Next: {new Date(s.nextRunAt).toLocaleDateString()}
+                      </span>
+                    )}
+                    {s.lastRunAt && (
+                      <span className="text-xs bg-[#1a1f33] text-slate-500 border border-[#2d3148] px-2 py-0.5 rounded">
+                        Last: {new Date(s.lastRunAt).toLocaleDateString()}
+                      </span>
+                    )}
+                    {s.counts
+                      ? Object.entries(s.counts).filter(([,v])=>v>0)
                           .map(([cat,n])=><span key={cat} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{cat}: {n}</span>)
                       : s.categories.map(c=><span key={c} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{c}</span>)
                     }
@@ -431,11 +509,11 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex gap-2 flex-shrink-0 mt-0.5">
-                  <button onClick={()=>runScheduleNow(s)} disabled={running} title="Run this schedule now"
+                  <button onClick={()=>runScheduleNow(s)} disabled={running} title="Run this search now"
                     className="text-indigo-500 hover:text-indigo-300 disabled:opacity-30 transition-colors">
                     <PlayIcon />
                   </button>
-                  <button onClick={()=>deleteSchedule(s.id)} title="Remove schedule"
+                  <button onClick={()=>deleteSchedule(s.id)} title="Remove"
                     className="text-slate-600 hover:text-red-400 transition-colors">
                     <TrashIcon />
                   </button>
@@ -501,8 +579,12 @@ export default function Dashboard() {
                       <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${run.status==="done"?"bg-green-400":"bg-red-400"}`}/>
                         <span className="text-slate-200 text-sm font-medium">{fmtDate(run.startedAt)}</span>
+                        {run.scheduleName && <span className="text-xs text-slate-500">— {run.scheduleName}</span>}
                       </div>
                       <div className="flex items-center gap-3">
+                        {run.source === "cron" && (
+                          <span className="text-xs bg-indigo-900/50 text-indigo-400 border border-indigo-800 px-2 py-0.5 rounded font-medium">Auto</span>
+                        )}
                         {run.toolsFound>0 && (
                           <span className="text-xs text-emerald-400 font-semibold">{run.toolsFound} tools found</span>
                         )}
@@ -599,6 +681,21 @@ function TrashIcon() {
       <polyline points="3 6 5 6 21 6"/>
       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
       <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+    </svg>
+  );
+}
+function WarningIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{flexShrink:0,marginTop:1}}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  );
+}
+function BookmarkIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
     </svg>
   );
 }

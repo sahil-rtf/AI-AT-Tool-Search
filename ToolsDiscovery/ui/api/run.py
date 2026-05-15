@@ -125,24 +125,44 @@ class handler(BaseHTTPRequestHandler):
                 send("STATUS:done")
 
         # Persist run history to Vercel Blob
+        finished_at = datetime.now(timezone.utc).isoformat()
         try:
             history = read_blob("run_history.json") or []
             history.insert(0, {
                 "id": run_id,
                 "startedAt": started_at,
-                "finishedAt": datetime.now(timezone.utc).isoformat(),
+                "finishedAt": finished_at,
                 "status": "done" if success else "error",
                 "params": config,
                 "toolsFound": tools_found,
+                "source": "manual",
                 "sheetUrl": (
                     f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit"
                     if SPREADSHEET_ID else ""
                 ),
-                "logs": logs[-100:],  # keep last 100 lines
+                "logs": logs[-100:],
             })
-            write_blob("run_history.json", history[:50])  # keep last 50 runs
+            write_blob("run_history.json", history[:50])
         except Exception:
             pass
+
+        # If run came from a saved schedule, update its lastRunAt / nextRunAt
+        schedule_id = config.get("schedule_id")
+        if schedule_id:
+            try:
+                from datetime import timedelta as _td
+                _FREQ_DELTA = {"daily": _td(days=1), "weekly": _td(weeks=1), "monthly": _td(days=30)}
+                all_schedules = read_blob("schedules.json") or []
+                for i, s in enumerate(all_schedules):
+                    if s.get("id") == schedule_id:
+                        freq = s.get("frequency", "weekly")
+                        base = datetime.fromisoformat(finished_at).replace(tzinfo=timezone.utc)
+                        next_run = (base + _FREQ_DELTA.get(freq, _td(weeks=1))).isoformat()
+                        all_schedules[i] = {**s, "lastRunAt": finished_at, "nextRunAt": next_run}
+                        break
+                write_blob("schedules.json", all_schedules)
+            except Exception:
+                pass
 
     def do_OPTIONS(self):
         self.send_response(204)
