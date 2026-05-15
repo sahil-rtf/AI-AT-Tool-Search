@@ -1,0 +1,107 @@
+[
+  {
+    "id_tag": "google_android_lookout",
+    "product_name": "Lookout",
+    "company": "Google-Android",
+    "description": "Lookout is an app that uses your phone's camera to help people who are blind or have low vision get information about the world around them. It reads text, identifies objects, and recognizes money, providing spoken feedback to assist with daily tasks and continuous environment scanning.",
+    "type": "I",
+    "categories": [
+      "Vision",
+      "Reading",
+      "Cognitive"
+    ],
+    "target_audience": "Individuals who are blind or have low vision, especially Android users, seeking real-time visual information and environmental awareness.",
+    "platforms": [
+      "Android"
+    ],
+    "pricing": [
+      "Free"
+    ],
+    "website": "https://play.google.com/store/apps/details?id=com.google.android.apps.accessibility.lookout&hl=en_US"
+  },
+  {
+    "id_tag": "aira_aira",
+    "product_name": "Aira",
+    "company": "Aira",
+    "description": "Aira connects people who are blind or have low vision with professional, highly trained agents for real-time visual assistance via a live video call from the user's smartphone camera. Agents can provide assistance with tasks such as navigating public spaces, reading documents, or identifying objects.",
+    "type": "I",
+    "categories": [
+      "Vision",
+      "Physical",
+      "Cognitive"
+    ],
+    "target_audience": "Individuals who are blind or have low vision needing on-demand human assistance for complex visual tasks or navigation in various environments.",
+    "platforms": [
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Subscription",
+      "Free Trial"
+    ],
+    "website": "https://aira.io/"
+  },
+  {
+    "id_tag": "textise_textise",
+    "product_name": "Textise",
+    "company": "Textise",
+    "description": "Textise is a tool, available as a website and browser extension, that converts almost any webpage into a text-only viewing experience by stripping out images, advertisements, scripts, and other distractions. Users can customize font size, spacing, text/page color, and ensure hyperlinks open in a text-only layout, making content easier to read and process.",
+    "type": "I",
+    "categories": [
+      "Vision",
+      "Reading",
+      "Cognitive"
+    ],
+    "target_audience": "Individuals with low vision, light sensitivity, or cognitive disabilities who benefit from reduced visual clutter and customizable text display for improved readability on web pages.",
+    "platforms": [
+      "Windows",
+      "Chromebook",
+      "Macintosh/Mac"
+    ],
+    "pricing": [
+      "Free"
+    ],
+    "website": "https://www.textise.net/"
+  },
+  {
+    "id_tag": "nls_bard_mobile",
+    "product_name": "BARD Mobile",
+    "company": "National Library Service for the Blind and Print Disabled",
+    "description": "BARD Mobile is a free application that provides access to tens of thousands of refreshable braille and audio titles for eligible individuals. It serves as a talking book library, allowing users to download and listen to digital talking books and magazines.",
+    "type": "I",
+    "categories": [
+      "Vision",
+      "Reading"
+    ],
+    "target_audience": "Individuals who are blind or have low vision, and are eligible for the National Library Service, to access a vast collection of accessible reading materials.",
+    "platforms": [
+      "iPhone",
+      "iPad",
+      "Android"
+    ],
+    "pricing": [
+      "Free"
+    ],
+    "website": "https://www.loc.gov/nls/services/acs/bard-app/"
+  },
+  {
+    "id_tag": "mymoveo_mymoveo",
+    "product_name": "MyMoveo",
+    "company": "MyMoveo",
+    "description": "MyMoveo is an application designed to enhance independent mobility for people with visual impairments. It allows users to activate Accessible Pedestrian Signals (APS) and audio beacons at crosswalks, providing audio cues for safer and more confident navigation in urban environments.",
+    "type": "I",
+    "categories": [
+      "Vision",
+      "Physical"
+    ],
+    "target_audience": "Individuals who are blind or have low vision seeking improved safety and independence when navigating pedestrian crossings and public spaces.",
+    "platforms": [
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Free"
+    ],
+    "website": "https://mymoveo.com/"
+  }
+]

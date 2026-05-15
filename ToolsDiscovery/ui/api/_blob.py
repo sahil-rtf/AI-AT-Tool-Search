@@ -76,7 +76,6 @@ def write_blob(filename: str, data: list | dict) -> bool:
     try:
         headers = {
             "Authorization": f"Bearer {_token()}",
-            "access": "private",
             "content-type": "application/json",
             "x-add-random-suffix": "0",
             "x-cache-control-max-age": "0",

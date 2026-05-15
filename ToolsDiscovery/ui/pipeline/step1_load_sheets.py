@@ -20,6 +20,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials as SACredentials
 from googleapiclient.discovery import build
 
 load_dotenv()
@@ -42,28 +43,49 @@ _ACCEPTED_SUBSTR = "Accepted"
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
-def _get_credentials() -> Credentials | None:
+def _decode_b64(env_var: str) -> dict | None:
+    """Decode a base64-encoded JSON env var, handling missing padding."""
+    raw = os.getenv(env_var, "").strip()
+    if not raw:
+        return None
+    raw += "=" * (-len(raw) % 4)
+    try:
+        return json.loads(base64.b64decode(raw).decode("utf-8"))
+    except Exception as exc:
+        print(f"[step1] Failed to decode {env_var}: {exc}", file=sys.stderr, flush=True)
+        return None
+
+
+def _get_credentials() -> "Credentials | SACredentials | None":
     """
     Returns valid Google credentials.
-    Prefers TOKEN_JSON env var (base64) for headless/Vercel environments.
-    Falls back to token.json on disk for local runs.
-    """
-    creds = None
 
-    token_b64 = os.getenv("TOKEN_JSON_B64")
-    if token_b64:
-        # clean up any padding issues
-        token_b64 = token_b64.strip()
-        token_b64 += "=" * (-len(token_b64) % 4)
-        token_data = base64.b64decode(token_b64).decode("utf-8")
-        creds = Credentials.from_authorized_user_info(json.loads(token_data), SCOPES)
+    Priority:
+      1. SERVICE_ACCOUNT_B64  — service account key JSON (never expires, no OAuth dance)
+      2. TOKEN_JSON_B64        — user OAuth token (base64) for headless/Vercel environments
+      3. token.json on disk    — local development fallback
+    """
+    # ── 1. Service account (permanent) ──────────────────────────────────────
+    sa_info = _decode_b64("SERVICE_ACCOUNT_B64")
+    if sa_info:
+        try:
+            return SACredentials.from_service_account_info(sa_info, scopes=SCOPES)
+        except Exception as exc:
+            print(f"[step1] Service account auth failed: {exc}", file=sys.stderr, flush=True)
+
+    # ── 2. OAuth user token (expires, needs refresh) ─────────────────────────
+    creds: Credentials | None = None
+    token_info = _decode_b64("TOKEN_JSON_B64")
+    if token_info:
+        creds = Credentials.from_authorized_user_info(token_info, SCOPES)
     elif os.path.exists("token.json"):
         creds = Credentials.from_authorized_user_file("token.json", SCOPES)
 
     if creds and creds.expired and creds.refresh_token:
         try:
             creds.refresh(Request())
-        except Exception:
+        except Exception as exc:
+            print(f"[step1] Token refresh failed: {exc}", file=sys.stderr, flush=True)
             creds = None
 
     return creds

@@ -1,0 +1,131 @@
+[
+  {
+    "id_tag": "bionic_reading",
+    "product_name": "Bionic Reading",
+    "company": "Bionic Reading",
+    "description": "Bionic Reading revises texts by highlighting the most concise parts of words, guiding the eye to improve reading speed, focus, and comprehension. It offers customizable settings, different fonts, and can be adapted to individual reader needs.",
+    "type": "I",
+    "categories": [
+      "Reading",
+      "Cognitive",
+      "Vision"
+    ],
+    "target_audience": "Individuals with dyslexia or anyone experiencing difficulty focusing while reading, aiming to increase reading speed and comprehension.",
+    "platforms": [
+      "Windows",
+      "Chromebook",
+      "Macintosh/Mac",
+      "iPad",
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Free",
+      "Subscription"
+    ],
+    "website": "https://bionic-reading.com"
+  },
+  {
+    "id_tag": "wordtune_read",
+    "product_name": "Wordtune Read",
+    "company": "AI21 Labs",
+    "description": "Wordtune Read is an AI-powered summarization tool that condenses lengthy articles into concise summaries and highlights key points. It helps users quickly grasp crucial information, improve focus, and reduce reading time, particularly beneficial for those with ADHD or dyslexia.",
+    "type": "I",
+    "categories": [
+      "Reading",
+      "Cognitive",
+      "Executive Function"
+    ],
+    "target_audience": "Students, professionals, and individuals with ADHD or dyslexia who need to quickly understand and focus on the main points of long documents and articles.",
+    "platforms": [
+      "Windows",
+      "Chromebook",
+      "Macintosh/Mac",
+      "iPad",
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Free Trial",
+      "Subscription"
+    ],
+    "website": "https://www.wordtune.com/read"
+  },
+  {
+    "id_tag": "rewordify",
+    "product_name": "Rewordify.com",
+    "company": "Rewordify.com",
+    "description": "Rewordify.com simplifies difficult English text by replacing complex words with easier-to-understand definitions, appearing in the correct part of speech. It also aids vocabulary development and can generate quizzes and worksheets.",
+    "type": "I",
+    "categories": [
+      "Reading",
+      "Cognitive",
+      "Training/ Therapy"
+    ],
+    "target_audience": "Anyone who struggles with complex language, vocabulary, or needs text simplified, including students, individuals with reading difficulties, and English language learners.",
+    "platforms": [
+      "Windows",
+      "Chromebook",
+      "Macintosh/Mac",
+      "iPad",
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Free"
+    ],
+    "website": "https://rewordify.com"
+  },
+  {
+    "id_tag": "readwise_reader",
+    "product_name": "Readwise Reader",
+    "company": "Readwise",
+    "description": "Readwise Reader is an all-in-one 'read-it-later' app for saving web articles, newsletters, PDFs, and more. It features advanced text-to-speech with lifelike voices, AI-powered summarization and definitional tools (Ghostreader), full-text search, and robust highlighting/note-taking/quizzing for improved comprehension and retention.",
+    "type": "I",
+    "categories": [
+      "Reading",
+      "Cognitive",
+      "Executive Function",
+      "Vision"
+    ],
+    "target_audience": "Individuals, including those with dyslexia or ADHD, who want to aggregate, read, understand, and retain information from diverse digital sources.",
+    "platforms": [
+      "Windows",
+      "Chromebook",
+      "Macintosh/Mac",
+      "iPad",
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Free Trial",
+      "Subscription"
+    ],
+    "website": "https://readwise.io/reader"
+  },
+  {
+    "id_tag": "dyslexease",
+    "product_name": "DyslexEase",
+    "company": "YesChat.ai",
+    "description": "DyslexEase is an AI-powered tool designed to support individuals with dyslexia by simplifying complex text. It rephrases complex language, breaks down long sentences, and substitutes difficult vocabulary with simpler alternatives to enhance readability and comprehension.",
+    "type": "I",
+    "categories": [
+      "Reading",
+      "Cognitive",
+      "Training/ Therapy"
+    ],
+    "target_audience": "Students and professionals with dyslexia who struggle with reading and comprehending standard or complex text and need language simplification.",
+    "platforms": [
+      "Windows",
+      "Chromebook",
+      "Macintosh/Mac",
+      "iPad",
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Free"
+    ],
+    "website": "https://yeschat.ai/tools/dyslexease"
+  }
+]

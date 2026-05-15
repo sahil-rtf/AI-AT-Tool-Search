@@ -1,0 +1,109 @@
+[
+  {
+    "id_tag": "intel_assistive_context_aware_toolkit_acat",
+    "product_name": "Assistive Context-Aware Toolkit (ACAT)",
+    "company": "Intel (Open-source community)",
+    "description": "An open-source toolkit that enables individuals with severe motor impairments to communicate and interact with computers. It features a customizable on-screen keyboard, intelligent word prediction, speech synthesis, and keyboard simulation, allowing control via various input methods like switches, cameras, or sip-and-puff.",
+    "type": "I",
+    "categories": [
+      "Physical",
+      "Speech/ Communication",
+      "Cognitive"
+    ],
+    "target_audience": "Individuals with severe motor impairments, such as ALS, who cannot use traditional keyboards or mice and require alternative communication and computer control methods.",
+    "platforms": [
+      "Windows"
+    ],
+    "pricing": [
+      "Free"
+    ],
+    "website": "https://github.com/IntelLabs/acat"
+  },
+  {
+    "id_tag": "texthelp_read_write_for_google",
+    "product_name": "Read & Write for Google",
+    "company": "Texthelp",
+    "description": "A Chrome extension that provides a suite of literacy tools, including text-to-speech, word prediction, dictation, and the ability to type directly on PDFs, making documents and web pages more accessible for users who struggle with traditional typing methods.",
+    "type": "I",
+    "categories": [
+      "Physical",
+      "Vision",
+      "Reading",
+      "Cognitive"
+    ],
+    "target_audience": "Students and individuals with physical disabilities who need assistance with reading, writing, and interacting with digital content within a browser environment.",
+    "platforms": [
+      "Windows",
+      "Chromebook",
+      "Macintosh/Mac"
+    ],
+    "pricing": [
+      "Free",
+      "Subscription"
+    ],
+    "website": "https://www.texthelp.com/products/read-write/"
+  },
+  {
+    "id_tag": "assistiveware_keeble",
+    "product_name": "Keeble",
+    "company": "AssistiveWare",
+    "description": "A customizable keyboard app for iPhone and iPad designed to help individuals with motor challenges type more easily and accurately on touchscreens. It includes features like customizable layouts, word prediction, and settings to reduce the effort needed for typing.",
+    "type": "I",
+    "categories": [
+      "Physical"
+    ],
+    "target_audience": "Individuals with motor challenges or dexterity issues who find standard touchscreen keyboards difficult to use on iOS/iPadOS devices.",
+    "platforms": [
+      "iPhone",
+      "iPad"
+    ],
+    "pricing": [
+      "One-time purchase"
+    ],
+    "website": "https://www.assistiveware.com/products/keeble"
+  },
+  {
+    "id_tag": "voice_finger",
+    "product_name": "Voice Finger",
+    "company": "Voice Finger",
+    "description": "Voice control software for Windows that enables users to control the mouse and keyboard with exceptional precision using spoken commands. It features a 'mouse grid' for accurate cursor positioning and allows for comprehensive hands-free computer operation for individuals with limited mobility.",
+    "type": "I",
+    "categories": [
+      "Physical"
+    ],
+    "target_audience": "Individuals with physical disabilities who require precise hands-free control of their computer's mouse and keyboard.",
+    "platforms": [
+      "Windows"
+    ],
+    "pricing": [
+      "One-time purchase",
+      "Free Trial"
+    ],
+    "website": "https://voicefinger.com/"
+  },
+  {
+    "id_tag": "bossai",
+    "product_name": "BossAI",
+    "company": "BossAI",
+    "description": "An AI-powered app offering cross-device voice typing for mobile and desktop, which provides consistent and accessible workflows. It includes customizable voice commands, hands-free shortcuts, and advanced voice editing features to streamline digital interaction for individuals with physical disabilities.",
+    "type": "I",
+    "categories": [
+      "Physical",
+      "Cognitive",
+      "Speech/ Communication"
+    ],
+    "target_audience": "Individuals with physical limitations who benefit from voice-controlled input, hands-free operation, and advanced voice editing across multiple devices for productivity.",
+    "platforms": [
+      "Windows",
+      "Macintosh/Mac",
+      "iPhone",
+      "iPad",
+      "Android"
+    ],
+    "pricing": [
+      "Free Trial",
+      "Subscription"
+    ],
+    "website": "https://boss.ai/"
+  }
+]

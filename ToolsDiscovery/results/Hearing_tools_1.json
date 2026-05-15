@@ -1,0 +1,68 @@
+[
+  {
+    "id_tag": "rogervoice",
+    "product_name": "Rogervoice",
+    "company": "Rogervoice",
+    "description": "Rogervoice provides real-time captioning for phone calls, allowing deaf and hard-of-hearing individuals to read conversations as they happen. It also transcribes voicemails into text and enables users to type responses which are then spoken aloud to the other party. The app offers customizable interfaces and supports over 100 languages.",
+    "type": "I",
+    "categories": [
+      "Hearing",
+      "Speech/ Communication"
+    ],
+    "target_audience": "Individuals who are deaf or hard of hearing, and those with speech difficulties, who need real-time communication during phone calls.",
+    "platforms": [
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Free",
+      "Subscription"
+    ],
+    "website": "https://rogervoice.com"
+  },
+  {
+    "id_tag": "ava",
+    "product_name": "Ava",
+    "company": "Ava",
+    "description": "Ava is a live captioning app that delivers real-time, one-tap captions for face-to-face conversations, group discussions, and online meetings. It utilizes AI to transcribe speech to text, can identify different speakers in group settings, and offers an optional human scribe service for enhanced accuracy. Users can also type their messages to have the app speak for them.",
+    "type": "I",
+    "categories": [
+      "Hearing",
+      "Speech/ Communication"
+    ],
+    "target_audience": "Deaf and hard-of-hearing individuals seeking to follow live, real-time conversations in various environments, including one-on-one, group, and online settings.",
+    "platforms": [
+      "iPhone",
+      "iPad",
+      "Android",
+      "Windows",
+      "Macintosh/Mac"
+    ],
+    "pricing": [
+      "Free",
+      "Subscription"
+    ],
+    "website": "https://www.ava.me"
+  },
+  {
+    "id_tag": "beaware_healthscribe",
+    "product_name": "HealthScribe",
+    "company": "BeAware",
+    "description": "HealthScribe provides offline, fast, and privacy-safe live transcriptions for deaf and hard-of-hearing patients in critical medical settings, such as hospital emergency rooms. It also offers live translations for patients with limited English proficiency, ensuring clear communication without requiring internet connectivity or storing personal data.",
+    "type": "I",
+    "categories": [
+      "Hearing",
+      "Speech/ Communication"
+    ],
+    "target_audience": "Deaf and hard-of-hearing individuals, particularly in critical medical environments, and those with limited English proficiency who require immediate and private transcription and translation services.",
+    "platforms": [
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Free Trial",
+      "Subscription"
+    ],
+    "website": "https://www.deafassistant.com"
+  }
+]

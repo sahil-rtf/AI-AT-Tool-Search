@@ -1,0 +1,114 @@
+[
+  {
+    "id_tag": "spoken_tap_to_talk_aac",
+    "product_name": "Spoken - Tap to Talk AAC",
+    "company": "Spoken",
+    "description": "An augmentative and alternative communication (AAC) app designed for individuals with nonverbal autism, aphasia, stroke, or other speech and language disorders. It utilizes advanced, AI-powered word predictions with next-generation text-to-speech to enable users to quickly build sentences by tapping and have them spoken aloud with natural-sounding voices.",
+    "type": "I",
+    "categories": [
+      "Speech/ Communication",
+      "Cognitive"
+    ],
+    "target_audience": "Individuals with nonverbal autism, aphasia, stroke, ALS, Parkinson's, cerebral palsy, or other speech and language disorders who need an alternate way of communicating.",
+    "platforms": [
+      "Android",
+      "iPad",
+      "iPhone",
+      "Macintosh/Mac"
+    ],
+    "pricing": [
+      "Free Trial",
+      "Subscription"
+    ],
+    "website": "https://spokenaac.com"
+  },
+  {
+    "id_tag": "hand_talk_translator",
+    "product_name": "Hand Talk Translator",
+    "company": "Hand Talk Servicos Ltda",
+    "description": "An app that automatically translates text and audio into American Sign Language (ASL), British Sign Language (BSL), and Brazilian Sign Language (Libras) through a 3D avatar. It acts as a communication aid for quick, basic communication and also helps users learn and practice various sign languages.",
+    "type": "I",
+    "categories": [
+      "Speech/ Communication",
+      "Hearing",
+      "Training/ Therapy"
+    ],
+    "target_audience": "Deaf and hard of hearing individuals for understanding spoken or written language, individuals learning sign language, and hearing individuals communicating with sign language users.",
+    "platforms": [
+      "Android",
+      "iPad",
+      "iPhone"
+    ],
+    "pricing": [
+      "Free",
+      "Subscription",
+      "One-time purchase"
+    ],
+    "website": "https://www.handtalk.me"
+  },
+  {
+    "id_tag": "handsway",
+    "product_name": "Handsway",
+    "company": "Jinit Shah",
+    "description": "A completely free, non-profit application that translates American Sign Language (ASL) alphabets, and in future updates common words and phrases, into text and speech in real-time using the device's built-in camera. It operates fully offline and prioritizes user privacy by running all machine learning models on the device.",
+    "type": "I",
+    "categories": [
+      "Speech/ Communication",
+      "Hearing"
+    ],
+    "target_audience": "Individuals who use American Sign Language to communicate, enabling them to express themselves to hearing individuals via text or spoken words.",
+    "platforms": [
+      "iPhone"
+    ],
+    "pricing": [
+      "Free"
+    ],
+    "website": "https://www.renee.app/handsway"
+  },
+  {
+    "id_tag": "sign_language_ai",
+    "product_name": "Sign Language AI",
+    "company": "Sign Language AI",
+    "description": "An AI-powered app offering two-way translation: English text or speech to Sign Language via visual signs, and Sign Language recognition from a device's camera to English text and speech. It also includes a comprehensive sign language dictionary with video tutorials.",
+    "type": "I",
+    "categories": [
+      "Speech/ Communication",
+      "Hearing",
+      "Training/ Therapy"
+    ],
+    "target_audience": "Deaf and hard of hearing individuals for translating their signs into English, hearing individuals for translating English into signs, and anyone looking to learn or practice sign language.",
+    "platforms": [
+      "Android"
+    ],
+    "pricing": [
+      "Free Trial",
+      "One-time purchase"
+    ],
+    "website": "https://play.google.com/store/apps/details?id=com.signlanguageai.app"
+  },
+  {
+    "id_tag": "letstalksign",
+    "product_name": "Let'sTalkSign",
+    "company": "Let'sTalkSign",
+    "description": "An automatic Sign Language Interpretation platform that translates sign language gestures to text and speech in real-time. It is device-agnostic, working on various devices with a browser and camera, and offers features like a personal assistant providing answers in sign language and interpreting TV content.",
+    "type": "I",
+    "categories": [
+      "Speech/ Communication",
+      "Hearing"
+    ],
+    "target_audience": "Deaf, hard-of-hearing, and speech-impaired individuals who use sign language, to facilitate independent communication with hearing individuals and access information.",
+    "platforms": [
+      "Windows",
+      "Chromebook",
+      "Macintosh/Mac",
+      "iPad",
+      "iPhone",
+      "Android"
+    ],
+    "pricing": [
+      "Free",
+      "Subscription"
+    ],
+    "website": "https://letstalksign.com"
+  }
+]
