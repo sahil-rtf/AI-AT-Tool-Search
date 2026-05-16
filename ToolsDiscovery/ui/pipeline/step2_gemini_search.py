@@ -25,9 +25,11 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 CATEGORY_COLUMN_MAP = {
     "Vision":               "Vision",
     "Reading":              "Reading",
+    "Writing":              "Writing",
     "Cognitive":            "Cognitive",
     "Physical":             "Physical",
     "Hearing":              "Hearing",
+    "Braille":              "Braille",
     "Speech/ Communication":"Speech/Comm",
     "Training/ Therapy":    "Training / Therapy",
     "Executive Function":   "Exec / Focus",
@@ -41,14 +43,32 @@ PRODUCT_NAME_COLS = [
 ]
 
 ALL_CATEGORIES = [
-    "Vision", "Reading", "Cognitive", "Physical", "Hearing",
-    "Speech/ Communication", "Training/ Therapy", "Executive Function",
+    "Vision", "Reading", "Writing", "Cognitive", "Physical", "Hearing",
+    "Braille", "Speech/ Communication", "Training/ Therapy", "Executive Function",
 ]
+
+# All known access types. Adding a new type here + a description below is all
+# that's needed to make it work end-to-end. When every type is selected the
+# filter is a no-op (same as selecting none).
+ALL_ACCESS_TYPES = {"Built-in", "Online", "Installable", "Works w/o internet"}
+
+# Human-readable prompt fragment for each access type, used to build the
+# Access Type Filter section dynamically.
+_ACCESS_TYPE_PROMPT = {
+    "Built-in":          'BUILT-IN features of an operating system or platform (type = "B")',
+    "Online":            'WEB-BASED or ONLINE services that run entirely in a browser and require no installation (type = "O")',
+    "Installable":       'tools requiring SEPARATE INSTALLATION such as apps, browser extensions, or downloadable software (type = "I")',
+    # "Works w/o internet" filter is not yet active.
+    # Uncomment the line below when ready to enable it:
+    # "Works w/o internet": 'tools that are OFFLINE-CAPABLE and function without an internet connection',
+}
 
 CATEGORY_DESCRIPTIONS = {
     "Reading": "Tools designed to assist individuals who have difficulty reading text. This includes people with reading disabilities such as dyslexia, those with low vision who struggles to read standard text, and individuals who are blind. These tools may offer features like text-to-speech, screen magnification, high-contrast modes, or simplified text presentation.",
+    "Writing": "Tools designed to help individuals who have difficulty producing written text. This includes people with dysgraphia, motor impairments, cognitive disabilities, or language processing difficulties. These tools may offer word prediction, grammar assistance, voice-to-text, or structured writing templates.",
     "Cognitive": "Tools intended to support users with cognitive disabilities that affect reading, writing, memory, or comprehension. This includes individuals with dyslexia, dysgraphia, ADHD, or processing disorders. Such tools may provide simplified content, visual or auditory alternatives, or support for multimodal learning.",
     "Vision": "Tools that assist individuals who are blind, have low vision, or other vision-related impairments. This category also includes tools designed to prevent seizures triggered by visual stimuli, such as flashing lights. Examples include screen readers, Braille displays, high-contrast modes, and tools that reduce flickering or visual clutter.",
+    "Braille": "Tools that provide Braille output or input support for individuals who are blind or deafblind. This includes Braille display drivers, Braille translation software, and apps that interface with refreshable Braille devices.",
     "Physical": "Tools designed to help users with physical disabilities that limit their ability to interact with devices using standard input methods. This includes individuals with limited or no use of their hands, or those with conditions like paralysis or motor impairments.",
     "Hearing": "Tools that assist individuals who are deaf or hard of hearing. These tools may include captioning, speech-to-text transcriptions, sign language support, amplification tools, and visual alerts.",
     "Speech/ Communication": "Tools that assist individuals who are non-verbal or have difficulty speaking or forming coherent verbal communication. This includes AAC devices, speech-generating apps, and sentence construction aids.",
@@ -62,6 +82,8 @@ CATEGORY_PERSONAS = {
     "Physical": "I am a person who is looking for assistive technology tools that would help a person who has trouble using standard keyboards and mouse and needs adaptations or alternate ways to generate text or issue pointing commands on a computer.",
     "Cognitive": "I am a person who is looking for assistive technology tools that would help a person who has cognitive disabilities and has trouble understanding written text, handling complex things, remembering, carrying out multi step processes.",
     "Reading": "I am a person who is looking for assistive technology tools that would help a person who has trouble reading, including trouble seeing the text, having dyslexia, handling complex language, dealing with idioms, trouble tracking across lines, etc.",
+    "Writing": "I am a person who is looking for assistive technology tools that would help a person who has trouble producing written text, including those with dysgraphia, motor difficulties, or language processing challenges who need word prediction, voice-to-text, or structured writing assistance.",
+    "Braille": "I am a person who is looking for assistive technology tools that provide Braille output or input, including software that works with refreshable Braille displays, Braille translation tools, and apps that help people who are blind or deafblind access content via Braille.",
     "Speech/ Communication": "I am a person who is looking for assistive technology tools that would help a person who has trouble speaking, and who needs tools to make speech clear or provide an alternate way of communicating. Also include tools that help change sign language to text or vice versa.",
     "Training/ Therapy": "I am a person who is looking for assistive technology tools that would help a person learn/develop skills, including things that help with reading, writing, using a computer, memory, attention, focus etc.",
     "Executive Function": "I am a person who is looking for assistive technology tools that would help a person who has trouble with executive functions such as planning, organization, staying on task, working on proper priorities, not missing appointments.",
@@ -119,11 +141,14 @@ def _build_prompt(
         platform_line = f"\n# Platform Filter #\nOnly include tools that are available on at least one of these platforms: {', '.join(platforms_filter)}. Do not include tools that are unavailable on all of these platforms.\n"
 
     access_line = ""
-    if access_type_filter and set(access_type_filter) != {"Built-in", "Installable"}:
-        if access_type_filter == ["Built-in"]:
-            access_line = '\n# Access Type Filter #\nOnly include tools that are BUILT-IN features of an operating system or platform (type = "B"). Do not include separately installable apps.\n'
-        elif access_type_filter == ["Installable"]:
-            access_line = '\n# Access Type Filter #\nOnly include tools that require SEPARATE INSTALLATION such as apps, browser extensions, or downloadable software (type = "I"). Do not include built-in OS features.\n'
+    if access_type_filter and set(access_type_filter) != ALL_ACCESS_TYPES:
+        descs = [_ACCESS_TYPE_PROMPT[t] for t in access_type_filter if t in _ACCESS_TYPE_PROMPT]
+        if descs:
+            if len(descs) == 1:
+                access_line = f'\n# Access Type Filter #\nOnly include {descs[0]}.\n'
+            else:
+                joined = ", ".join(descs[:-1]) + f", or {descs[-1]}"
+                access_line = f'\n# Access Type Filter #\nOnly include tools that match at least one of: {joined}.\n'
 
     pricing_line = ""
     if pricing_filter:
@@ -175,7 +200,8 @@ For each tool, provide the information in JSON format with the following structu
 
 **Type Instructions:**
 - Set "type" to "B" if the tool is a built-in feature of an OS or larger platform.
-- Set "type" to "I" for any tool requiring separate installation (app, browser extension, etc.).
+- Set "type" to "O" if the tool is a web-based or online service that runs entirely in a browser and requires no installation.
+- Set "type" to "I" for any tool requiring separate installation (app, browser extension, downloaded software, etc.).
 
 **Platform Instructions:**
 - The "platforms" field must only contain values from: "Windows", "Chromebook", "Macintosh/Mac", "iPad", "iPhone", "Android".

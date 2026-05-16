@@ -13,6 +13,7 @@ import json
 import math
 import os
 import re
+import sys
 import unicodedata
 from pathlib import Path
 from typing import Callable
@@ -50,10 +51,12 @@ DUPLICATE_HEADER = "Duplicate\n(move to AI_Duplicates)"
 
 CATEGORY_TO_COL = {
     "Reading": ("Reading", "R"),
+    "Writing": ("Writing", "W"),
     "Cognitive": ("Cognitive", "C"),
     "Vision": ("Vision", "V"),
-    "Physical": ("Physical", "P"),
+    "Braille": ("Braille", "B"),
     "Hearing": ("Hearing", "H"),
+    "Physical": ("Physical", "P"),
     "Speech/ Communication": ("Speech/Comm", "S"),
     "Training/ Therapy": ("Training / Therapy", "T"),
     "Executive Function": ("Exec / Focus", "E"),
@@ -69,6 +72,9 @@ PLATFORM_TO_COL = {
     "Android": ("Android", "A"),
 }
 
+# Letter used when a tool works without an internet connection.
+WORKS_WITHOUT_INTERNET_LETTER: str = "NoInternet"
+
 PRICING_TO_COL = {
     "Free": ("FREE", "F"),
     "Free Trial": ("Trial", "F"),
@@ -76,14 +82,24 @@ PRICING_TO_COL = {
     "Subscription": ("Subscription", "S"),
 }
 
+# All individual OS/platform columns that should be auto-filled when the
+# "(**online - mark all)" column is checked (letter "0").
+_ALL_OS_COLS = ["Windows", "Macintosh", "Chromebook", "iPad (iPadOS)", "iPhone (iOS)", "Android"]
+
 ACTIVE_TYPE_COLS = {
     "B": ["Built-In (no install)", "Built In"],
+    "O": ["Online (no install)"],
     "I": ["Need to install", "AT (Installed)"],
 }
 
 ACTIVE_CATEGORY_COLS = {
-    "Reading": "Reading", "Cognitive": "Cognitive", "Vision": "Vision",
-    "Physical": "Physical", "Hearing": "Hearing",
+    "Reading": "Reading",
+    "Writing": "Writing",
+    "Cognitive": "Cognitive",
+    "Vision": "Vision",
+    "Braille": "Braille",
+    "Hearing": "Hearing",
+    "Physical": "Physical",
     "Speech/ Communication": "Speech/Comm",
     "Training/ Therapy": "Training / Therapy",
     "Executive Function": "Exec / Focus",
@@ -333,10 +349,27 @@ def _format_row(tool: dict, data_cols: list) -> list:
     tool_type = str(tool.get("Type", "")).strip()
     col_values: dict = {}
 
+    # ── Access type ───────────────────────────────────────────────────────────
     if tool_type == "B":
         col_values["Built-In (no install)"] = "B"
+    elif tool_type == "O":
+        col_values["Online (no install)"] = "O"
     elif tool_type == "I":
         col_values["Need to install"] = "I"
+
+    # ── Works w/o internet ────────────────────────────────────────────────────
+    # WORKS_WITHOUT_INTERNET_LETTER is a module-level constant (currently "").
+    # Assign the real letter there; no other code change needed.
+    works_offline = str(tool.get("Works w/o internet", "")).strip()
+    if works_offline and WORKS_WITHOUT_INTERNET_LETTER:
+        col_values["Works w/o internet"] = WORKS_WITHOUT_INTERNET_LETTER
+
+    # ── (**online - mark all) → letter "0" + auto-fill every OS column ────────
+    online_all = str(tool.get("online_mark_all", "")).strip()
+    if online_all:
+        col_values["(**online - mark all)"] = "0"
+        for os_col in _ALL_OS_COLS:
+            col_values[os_col] = "0"
 
     for pk, (col, letter) in PRICING_TO_COL.items():
         if pk in pricing:
@@ -344,11 +377,14 @@ def _format_row(tool: dict, data_cols: list) -> list:
     for cat, (col, letter) in CATEGORY_TO_COL.items():
         if cat in categories:
             col_values[col] = letter
-    for plat in platforms:
-        for key, (col, letter) in PLATFORM_TO_COL.items():
-            if key.lower() in plat.lower():
-                col_values[col] = letter
-                break
+
+    # Only write individual OS columns when "(**online - mark all)" is NOT set
+    if "(**online - mark all)" not in col_values:
+        for plat in platforms:
+            for key, (col, letter) in PLATFORM_TO_COL.items():
+                if key.lower() in plat.lower():
+                    col_values[col] = letter
+                    break
 
     col_values["ID TAG"] = str(tool.get("ID Tag", "") or "")
     col_values["COMPANY"] = str(tool.get("Company", "") or "")

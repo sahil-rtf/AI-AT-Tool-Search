@@ -22,7 +22,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 VALID_CATEGORIES = [
-    "Reading", "Cognitive", "Vision", "Physical", "Hearing",
+    "Reading", "Writing", "Cognitive", "Vision", "Braille", "Physical", "Hearing",
     "Speech/ Communication", "Training/ Therapy", "Executive Function",
 ]
 VALID_PLATFORMS = ["Windows", "Macintosh", "Chromebook", "iPad (iPadOS)", "iPhone (iOS)", "Android"]
@@ -30,8 +30,10 @@ VALID_PRICING = ["Free", "Free Trial", "Subscription", "One-time purchase"]
 
 CATEGORY_DEFINITIONS = {
     "Reading": "Tools designed to assist individuals who have difficulty reading text.",
+    "Writing": "Tools designed to help individuals who have difficulty producing written text, including those with dysgraphia, motor impairments, or language processing difficulties.",
     "Cognitive": "Tools intended to support users with cognitive disabilities.",
     "Vision": "Tools that assist individuals who are blind or have low vision.",
+    "Braille": "Tools that provide Braille output or input for individuals who are blind or deafblind.",
     "Physical": "Tools designed to help users with physical disabilities.",
     "Hearing": "Tools that assist individuals who are deaf or hard of hearing.",
     "Speech/ Communication": "Tools that assist individuals who are non-verbal or have difficulty speaking.",

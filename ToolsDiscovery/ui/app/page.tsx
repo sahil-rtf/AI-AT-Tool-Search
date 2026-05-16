@@ -5,15 +5,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  "Vision", "Reading", "Cognitive", "Physical", "Hearing",
-  "Speech/ Communication", "Training/ Therapy", "Executive Function",
+  "Vision", "Reading", "Writing", "Cognitive", "Physical", "Hearing",
+  "Braille", "Speech/ Communication", "Training/ Therapy", "Executive Function",
 ] as const;
 
 const PLATFORMS = [
   "Windows", "Macintosh/Mac", "Chromebook", "iPad", "iPhone", "Android",
 ] as const;
 
-const ACCESS_TYPES = ["Built-in", "Installable"] as const;
+const ACCESS_TYPES = ["Built-in", "Online", "Installable", "Works w/o internet"] as const;
+const ACCESS_TYPES_COMING_SOON: readonly string[] = [];
 
 const PRICING_OPTIONS = ["Free", "Free Trial", "Subscription", "One-time purchase"] as const;
 
@@ -69,15 +70,15 @@ function classifyLog(text: string): LogLine["kind"] {
 }
 
 const logColor: Record<LogLine["kind"],string> = {
-  normal:"text-slate-400", error:"text-red-400",
-  step:"text-indigo-400 font-semibold", ok:"text-green-400", warn:"text-amber-400",
+  normal:"text-slate-600", error:"text-red-600",
+  step:"text-indigo-600 font-semibold", ok:"text-green-600", warn:"text-amber-600",
 };
 
 const badgeStyles: Record<Status,{pill:string;dot:string;label:string}> = {
-  idle:    { pill:"bg-slate-800 text-slate-500 border border-slate-700", dot:"",                   label:"Idle"     },
-  running: { pill:"bg-blue-950  text-blue-400  border border-blue-700",  dot:"animate-pulse-dot",  label:"Running"  },
-  done:    { pill:"bg-green-950 text-green-400 border border-green-800", dot:"",                   label:"Complete" },
-  error:   { pill:"bg-red-950   text-red-400   border border-red-900",   dot:"",                   label:"Error"    },
+  idle:    { pill:"bg-slate-100 text-slate-500 border border-slate-300", dot:"",                   label:"Idle"     },
+  running: { pill:"bg-blue-50   text-blue-600  border border-blue-300",  dot:"animate-pulse-dot",  label:"Running"  },
+  done:    { pill:"bg-green-50  text-green-600 border border-green-300", dot:"",                   label:"Complete" },
+  error:   { pill:"bg-red-50    text-red-600   border border-red-300",   dot:"",                   label:"Error"    },
 };
 
 function fmtDate(iso: string) {
@@ -378,19 +379,19 @@ export default function Dashboard() {
   const badge = badgeStyles[status];
 
   return (
-    <main className="flex flex-col items-center px-4 py-10 pb-16 min-h-screen bg-[#0f1117]">
+    <main className="flex flex-col items-center px-4 py-10 pb-16 min-h-screen bg-white">
 
       {/* Header */}
       <header className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-slate-100 tracking-tight">
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
           AT Tool Discovery
         </h1>
         <p className="text-slate-500 text-sm mt-1.5">Pipeline Dashboard — configure, run, and monitor from your browser</p>
       </header>
 
       {/* ── Configure + Schedule (merged) ── */}
-      <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-xl p-8 mb-5">
-        <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-6">
+      <section className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl p-8 mb-5">
+        <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-widest mb-6">
           <CalendarIcon />
           Schedule a Search
         </div>
@@ -399,54 +400,54 @@ export default function Dashboard() {
           {/* Name + Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-slate-400 text-xs font-medium">Search Name</label>
+              <label className="text-slate-500 text-xs font-medium">Search Name</label>
               <input type="text" placeholder="e.g. Weekly Vision Scan" value={schedName}
                 onChange={e=>setSchedName(e.target.value)}
-                className="bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded-lg text-slate-100 text-sm px-3 py-2 outline-none transition-colors placeholder:text-slate-600"
+                className="bg-white border border-slate-300 focus:border-indigo-500 rounded-lg text-slate-900 text-sm px-3 py-2 outline-none transition-colors placeholder:text-slate-400"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-slate-400 text-xs font-medium">Start Date</label>
+              <label className="text-slate-500 text-xs font-medium">Start Date</label>
               <input type="date" value={schedDate} onChange={e=>setSchedDate(e.target.value)}
-                className="bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded-lg text-slate-100 text-sm px-3 py-2 outline-none transition-colors"
-                style={{colorScheme:"dark"}}
+                className="bg-white border border-slate-300 focus:border-indigo-500 rounded-lg text-slate-900 text-sm px-3 py-2 outline-none transition-colors"
+                style={{colorScheme:"light"}}
               />
             </div>
           </div>
 
           {/* Categories with counts */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-400 text-xs font-medium">
+            <label className="text-slate-500 text-xs font-medium">
               Tools to find per category
-              <span className="ml-2 text-slate-600 normal-case font-normal">— set to 0 to skip a category</span>
+              <span className="ml-2 text-slate-400 normal-case font-normal">— set to 0 to skip a category</span>
             </label>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {CATEGORIES.map(cat=>(
-                <div key={cat} className={`flex items-center justify-between bg-[#262b40] border rounded-lg px-3 py-2 gap-3 focus-within:border-indigo-500 transition-colors ${schedCounts[cat]>0?"border-indigo-600":"border-[#3d4466]"}`}>
-                  <label className="text-slate-300 text-sm flex-1 truncate">{cat}</label>
+                <div key={cat} className={`flex items-center justify-between bg-slate-50 border rounded-lg px-3 py-2 gap-3 focus-within:border-indigo-500 transition-colors ${schedCounts[cat]>0?"border-indigo-400":"border-slate-200"}`}>
+                  <label className="text-slate-700 text-sm flex-1 truncate">{cat}</label>
                   <input type="number" min={0} max={10}
                     value={schedCounts[cat] === 0 ? "" : schedCounts[cat]}
                     placeholder="0"
                     onChange={e=>setSchedCounts(prev=>({...prev,[cat]:Math.min(10,Math.max(0,parseInt(e.target.value)||0))}))}
                     onBlur={e=>{ if(e.target.value==="") setSchedCounts(prev=>({...prev,[cat]:0})); }}
-                    className="w-16 bg-[#0f1117] border border-[#3d4466] focus:border-indigo-500 rounded text-slate-100 text-sm text-center px-2 py-1 outline-none transition-colors placeholder:text-slate-600"
+                    className="w-16 bg-white border border-slate-300 focus:border-indigo-500 rounded text-slate-900 text-sm text-center px-2 py-1 outline-none transition-colors placeholder:text-slate-400"
                   />
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between px-4 py-3 bg-[#1a1f33] border border-[#2d3148] rounded-lg">
-              <span className="text-slate-500 text-sm">Total tools to discover</span>
-              <span className="text-slate-100 text-xl font-bold">{schedTotal}</span>
+            <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg">
+              <span className="text-slate-500 text-sm">Total tools to search for across all categories</span>
+              <span className="text-slate-900 text-xl font-bold">{schedTotal}</span>
             </div>
           </div>
 
           {/* Platforms */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-400 text-xs font-medium">Platforms <span className="ml-1 text-slate-600 normal-case font-normal">(select one or more)</span></label>
+            <label className="text-slate-500 text-xs font-medium">Platforms <span className="ml-1 text-slate-400 normal-case font-normal">(select one or more)</span></label>
             <div className="flex flex-wrap gap-2">
               {PLATFORMS.map(p=>(
                 <button key={p} type="button" onClick={()=>setSchedPlatforms(prev=>toggle(prev,p))}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${schedPlatforms.includes(p)?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${schedPlatforms.includes(p)?"bg-indigo-600 border-indigo-500 text-white":"bg-white border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900"}`}>
                   {p}
                 </button>
               ))}
@@ -455,24 +456,37 @@ export default function Dashboard() {
 
           {/* Access Type */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-400 text-xs font-medium">Access Type <span className="ml-1 text-slate-600 normal-case font-normal">(built-in OS feature vs separately installable)</span></label>
-            <div className="flex gap-3">
+            <label className="text-slate-500 text-xs font-medium">Access Type <span className="ml-1 text-slate-400 normal-case font-normal">(built-in OS feature, online/web-based, separately installable, or works without internet)</span></label>
+            <div className="flex gap-3 flex-wrap">
               {ACCESS_TYPES.map(a=>(
                 <button key={a} type="button" onClick={()=>setSchedAccessType(p=>toggle(p,a))}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${schedAccessType.includes(a)?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${schedAccessType.includes(a)?"bg-indigo-600 border-indigo-500 text-white":"bg-white border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900"}`}>
                   {a}
                 </button>
               ))}
+              {ACCESS_TYPES_COMING_SOON.map(a=>(
+                <button key={a} type="button" disabled
+                  title="Coming soon — letter not yet assigned"
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold border border-dashed border-slate-300 text-slate-400 bg-slate-50 cursor-not-allowed select-none">
+                  {a}
+                  <span className="ml-1.5 text-[10px] font-normal text-slate-400">soon</span>
+                </button>
+              ))}
             </div>
+            {schedAccessType.includes("Works w/o internet") && (
+              <p className="text-slate-400 text-xs px-1">
+                ℹ Note: the &ldquo;Works w/o internet&rdquo; filter is not yet active — selecting it will not affect the search results at this time.
+              </p>
+            )}
           </div>
 
           {/* Pricing */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-400 text-xs font-medium">Pricing Filter <span className="ml-1 text-slate-600 normal-case font-normal">(leave blank for any pricing)</span></label>
+            <label className="text-slate-500 text-xs font-medium">Pricing Filter <span className="ml-1 text-slate-400 normal-case font-normal">(leave blank for any pricing)</span></label>
             <div className="flex flex-wrap gap-2">
               {PRICING_OPTIONS.map(p=>(
                 <button key={p} type="button" onClick={()=>setSchedPricing(prev=>toggle(prev,p))}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${schedPricing.includes(p)?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${schedPricing.includes(p)?"bg-indigo-600 border-indigo-500 text-white":"bg-white border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900"}`}>
                   {p}
                 </button>
               ))}
@@ -482,7 +496,7 @@ export default function Dashboard() {
 
           {schedError && <p className="text-red-400 text-xs">{schedError}</p>}
           {conflictWarning && (
-            <div className="flex gap-2 px-3 py-2.5 bg-amber-950/50 border border-amber-800 rounded-lg text-amber-400 text-xs leading-relaxed">
+            <div className="flex gap-2 px-3 py-2.5 bg-amber-50 border border-amber-300 rounded-lg text-amber-700 text-xs leading-relaxed">
               <WarningIcon /><span>{conflictWarning}</span>
             </div>
           )}
@@ -492,23 +506,23 @@ export default function Dashboard() {
             const nextRun = computeNextRun(schedDate, schedFrequency);
             const activeCats = CATEGORIES.filter(c => schedCounts[c] > 0);
             return (
-              <div className="flex flex-col gap-4 bg-[#131929] border border-indigo-800/60 rounded-xl p-5">
+              <div className="flex flex-col gap-4 bg-slate-50 border border-indigo-200 rounded-xl p-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-indigo-400 text-xs font-semibold uppercase tracking-widest">
+                  <div className="flex items-center gap-2 text-indigo-600 text-xs font-semibold uppercase tracking-widest">
                     <CalendarIcon small />Auto-Schedule Staging
                   </div>
                   <button type="button" onClick={()=>setShowAutoStaging(false)}
-                    className="text-slate-600 hover:text-slate-300 text-xs transition-colors">✕ Cancel</button>
+                    className="text-slate-400 hover:text-slate-700 text-xs transition-colors">✕ Cancel</button>
                 </div>
 
                 {/* Frequency selector */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-slate-400 text-xs font-medium">Repeat Frequency</label>
+                  <label className="text-slate-500 text-xs font-medium">Repeat Frequency</label>
                   <div className="flex gap-3">
                     {FREQUENCIES.map(f=>(
                       <button key={f} type="button" onClick={()=>setSchedFrequency(f)}
-                        className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-colors ${schedFrequency===f?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
+                        className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-colors ${schedFrequency===f?"bg-indigo-600 border-indigo-500 text-white":"bg-white border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900"}`}>
                         {f}
                       </button>
                     ))}
@@ -517,57 +531,57 @@ export default function Dashboard() {
 
                 {/* Config summary */}
                 <div className="flex flex-col gap-2">
-                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Configuration</p>
-                  <div className="bg-[#0f1117] border border-[#2d3148] rounded-lg px-4 py-3 flex flex-col gap-2">
+                  <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Configuration</p>
+                  <div className="bg-white border border-slate-200 rounded-lg px-4 py-3 flex flex-col gap-2">
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">Name</span>
-                      <span className="text-slate-200 font-medium">{schedName.trim()}</span>
+                      <span className="text-slate-800 font-medium">{schedName.trim()}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">Frequency</span>
-                      <span className="text-indigo-300 font-semibold capitalize">{schedFrequency}</span>
+                      <span className="text-indigo-600 font-semibold capitalize">{schedFrequency}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">Start date</span>
-                      <span className="text-slate-200">{schedDate}</span>
+                      <span className="text-slate-800">{schedDate}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">Platforms</span>
-                      <span className="text-slate-200">{schedPlatforms.join(", ") || "—"}</span>
+                      <span className="text-slate-800">{schedPlatforms.join(", ") || "—"}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">Categories</span>
-                      <span className="text-slate-200">{activeCats.map(c=>`${c}: ${schedCounts[c]}`).join(", ")}</span>
+                      <span className="text-slate-800">{activeCats.map(c=>`${c}: ${schedCounts[c]}`).join(", ")}</span>
                     </div>
                     {schedPricing.length > 0 && (
                       <div className="flex justify-between text-xs">
                         <span className="text-slate-500">Pricing</span>
-                        <span className="text-slate-200">{schedPricing.join(", ")}</span>
+                        <span className="text-slate-800">{schedPricing.join(", ")}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Schedule info */}
-                <div className="flex flex-col gap-1.5 bg-indigo-950/40 border border-indigo-800/50 rounded-lg px-4 py-3">
-                  <p className="text-indigo-300 text-xs font-semibold flex items-center gap-1.5">
-                    <ClockIcon />Auto-schedule runs every job at <span className="text-white">9:00 AM UTC</span>
+                <div className="flex flex-col gap-1.5 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+                  <p className="text-indigo-700 text-xs font-semibold flex items-center gap-1.5">
+                    <ClockIcon />Auto-schedule runs every job at <span className="text-indigo-900">9:00 AM UTC</span>
                   </p>
-                  <p className="text-slate-400 text-xs">
-                    Next scheduled run: <span className="text-indigo-300 font-medium">{fmtNextRun(nextRun)}</span>
+                  <p className="text-slate-600 text-xs">
+                    Next scheduled run: <span className="text-indigo-600 font-medium">{fmtNextRun(nextRun)}</span>
                   </p>
                 </div>
 
                 {/* Run-now choice */}
                 <div className="flex flex-col gap-2">
-                  <p className="text-slate-400 text-xs font-medium">Would you like to run now, or wait for the scheduled time?</p>
+                  <p className="text-slate-500 text-xs font-medium">Would you like to run now, or wait for the scheduled time?</p>
                   <div className="flex gap-3">
                     <button type="button" onClick={()=>setAutoRunNow(true)}
-                      className={`flex-1 py-2.5 rounded-lg text-xs font-semibold border transition-colors flex items-center justify-center gap-1.5 ${autoRunNow===true?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
+                      className={`flex-1 py-2.5 rounded-lg text-xs font-semibold border transition-colors flex items-center justify-center gap-1.5 ${autoRunNow===true?"bg-indigo-600 border-indigo-500 text-white":"bg-white border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900"}`}>
                       <PlayIcon />Run now &amp; schedule
                     </button>
                     <button type="button" onClick={()=>setAutoRunNow(false)}
-                      className={`flex-1 py-2.5 rounded-lg text-xs font-semibold border transition-colors ${autoRunNow===false?"bg-indigo-600 border-indigo-500 text-white":"bg-[#262b40] border-[#3d4466] text-slate-400 hover:border-slate-400 hover:text-slate-200"}`}>
+                      className={`flex-1 py-2.5 rounded-lg text-xs font-semibold border transition-colors ${autoRunNow===false?"bg-indigo-600 border-indigo-500 text-white":"bg-white border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900"}`}>
                       Let it run automatically
                     </button>
                   </div>
@@ -597,14 +611,14 @@ export default function Dashboard() {
 
           <div className="flex gap-3 flex-wrap">
             <button type="button" onClick={saveConfigOnly}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-[#3d4466] text-slate-300 hover:border-slate-400 hover:text-white transition-colors bg-[#262b40]"
-              title="Save as a reusable config (no automatic runs)">
-              <BookmarkIcon />Save Config
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 text-slate-700 hover:border-slate-500 hover:text-slate-900 transition-colors bg-white"
+              title="Save this search config to run manually later (appears in Saved Searches)">
+              <BookmarkIcon />Save Search
             </button>
             {!showAutoStaging && (
             <button type="button"
               onClick={openAutoStaging}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-indigo-700 text-indigo-300 hover:border-indigo-500 hover:text-white transition-colors bg-[#262b40]"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold border border-indigo-300 text-indigo-600 hover:border-indigo-500 hover:text-indigo-800 transition-colors bg-white"
               title="Save and auto-run on start date, then repeat at chosen frequency">
               <CalendarIcon small />Auto-Schedule
             </button>
@@ -624,45 +638,45 @@ export default function Dashboard() {
 
       {/* ── Scheduled searches list ── */}
       {schedules.length > 0 && (
-        <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-xl p-8 mb-5">
-          <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">
+        <section className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl p-8 mb-5">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-widest mb-4">
             <ClockIcon />
             Saved Searches
-            <span className="ml-auto bg-[#262b40] text-slate-400 text-xs font-bold px-2 py-0.5 rounded border border-[#3d4466]">{schedules.length}</span>
+            <span className="ml-auto bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded border border-slate-200">{schedules.length}</span>
           </div>
           <div className="flex flex-col gap-3">
             {schedules.map(s=>(
-              <div key={s.id} className="bg-[#262b40] border border-[#343a54] rounded-lg px-4 py-3 flex items-start justify-between gap-3">
+              <div key={s.id} className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-slate-200 text-sm font-semibold truncate">{s.name}</span>
+                    <span className="text-slate-800 text-sm font-semibold truncate">{s.name}</span>
                     {s.type === "schedule"
-                      ? <span className="text-xs bg-indigo-900/60 text-indigo-400 border border-indigo-700 px-2 py-0.5 rounded font-medium">Auto</span>
-                      : <span className="text-xs bg-slate-800 text-slate-400 border border-[#3d4466] px-2 py-0.5 rounded font-medium">Config</span>
+                      ? <span className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded font-medium">Auto</span>
+                      : <span className="text-xs bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded font-medium">Config</span>
                     }
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {s.type === "schedule" && s.frequency && (
-                      <span className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded capitalize">{s.frequency}</span>
+                      <span className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded capitalize">{s.frequency}</span>
                     )}
                     {s.nextRunAt && s.type === "schedule" && (
-                      <span className="text-xs bg-[#1a1f33] text-indigo-400 border border-indigo-900 px-2 py-0.5 rounded">
+                      <span className="text-xs bg-white text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded">
                         Next: {new Date(s.nextRunAt).toLocaleDateString()}
                       </span>
                     )}
                     {s.lastRunAt && (
-                      <span className="text-xs bg-[#1a1f33] text-slate-500 border border-[#2d3148] px-2 py-0.5 rounded">
+                      <span className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded">
                         Last: {new Date(s.lastRunAt).toLocaleDateString()}
                       </span>
                     )}
                     {s.counts
                       ? Object.entries(s.counts).filter(([,v])=>v>0)
-                          .map(([cat,n])=><span key={cat} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{cat}: {n}</span>)
-                      : s.categories.map(c=><span key={c} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{c}</span>)
+                          .map(([cat,n])=><span key={cat} className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded">{cat}: {n}</span>)
+                      : s.categories.map(c=><span key={c} className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded">{c}</span>)
                     }
-                    {s.platforms.map(p=><span key={p} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{p}</span>)}
-                    {s.accessType?.map(a=><span key={a} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{a}</span>)}
-                    {s.pricing?.map(p=><span key={p} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{p}</span>)}
+                    {s.platforms.map(p=><span key={p} className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded">{p}</span>)}
+                    {s.accessType?.map(a=><span key={a} className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded">{a}</span>)}
+                    {s.pricing?.map(p=><span key={p} className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded">{p}</span>)}
                   </div>
                 </div>
                 <div className="flex gap-2 flex-shrink-0 mt-0.5">
@@ -682,8 +696,8 @@ export default function Dashboard() {
       )}
 
       {/* ── Progress card ── */}
-      <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-xl p-8 mb-5">
-        <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-6">
+      <section className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl p-8 mb-5">
+        <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-widest mb-6">
           <TableIcon />Pipeline Progress
         </div>
         <div className="flex items-center gap-3 mb-5">
@@ -696,23 +710,23 @@ export default function Dashboard() {
           {STEPS.map((label,i)=>{
             const state=steps[i];
             return (
-              <div key={i} className={`flex items-center gap-3 text-sm transition-colors ${state==="active"?"text-blue-300":state==="done"?"text-green-400":"text-slate-600"}`}>
+              <div key={i} className={`flex items-center gap-3 text-sm transition-colors ${state==="active"?"text-blue-600":state==="done"?"text-green-600":"text-slate-400"}`}>
                 <span className={`w-2.5 h-2.5 rounded-full border-2 border-current flex-shrink-0 ${state==="active"?"bg-blue-400 animate-pulse-dot":state==="done"?"bg-green-400":""}`}/>
                 Step {i+1} — {label}
               </div>
             );
           })}
         </div>
-        <div className="bg-[#0a0d14] border border-[#1e2435] rounded-lg p-4 h-80 overflow-y-auto font-mono text-xs leading-relaxed">
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 h-80 overflow-y-auto font-mono text-xs leading-relaxed">
           {logs.length===0
-            ? <span className="text-slate-700">Waiting for pipeline to start…</span>
+            ? <span className="text-slate-400">Waiting for pipeline to start…</span>
             : logs.map((line,i)=><div key={i} className={logColor[line.kind]}>{line.text}</div>)
           }
           <div ref={logEndRef}/>
         </div>
         {sheetUrl && (
           <a href={sheetUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 mt-4 px-4 py-3 bg-[#1a1f33] border border-[#2d3148] rounded-lg text-green-400 text-sm font-medium hover:bg-[#262b40] transition-colors">
+            className="flex items-center gap-2 mt-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-green-600 text-sm font-medium hover:bg-slate-100 transition-colors">
             <ExternalLinkIcon />Open AI_LEADS in Google Sheets
           </a>
         )}
@@ -720,32 +734,32 @@ export default function Dashboard() {
 
       {/* ── Run History ── */}
       {dataLoaded && (
-        <section className="w-full max-w-3xl bg-[#1e2130] border border-[#2d3148] rounded-xl p-8">
-          <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">
+        <section className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl p-8">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-widest mb-4">
             <HistoryIcon />
             Run History
-            {history.length>0 && <span className="ml-auto bg-[#262b40] text-slate-400 text-xs font-bold px-2 py-0.5 rounded border border-[#3d4466]">{history.length}</span>}
+            {history.length>0 && <span className="ml-auto bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded border border-slate-200">{history.length}</span>}
           </div>
           {history.length===0
-            ? <p className="text-slate-600 text-sm">No runs yet. Run the pipeline to see history here.</p>
+            ? <p className="text-slate-400 text-sm">No runs yet. Run the pipeline to see history here.</p>
             : (
               <div className="flex flex-col gap-3">
                 {history.map(run=>(
-                  <div key={run.id} className="bg-[#262b40] border border-[#343a54] rounded-lg px-4 py-3">
+                  <div key={run.id} className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${run.status==="done"?"bg-green-400":"bg-red-400"}`}/>
-                        <span className="text-slate-200 text-sm font-medium">{fmtDate(run.startedAt)}</span>
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${run.status==="done"?"bg-green-500":"bg-red-500"}`}/>
+                        <span className="text-slate-800 text-sm font-medium">{fmtDate(run.startedAt)}</span>
                         {run.scheduleName && <span className="text-xs text-slate-500">— {run.scheduleName}</span>}
                       </div>
                       <div className="flex items-center gap-3">
                         {run.source === "cron" && (
-                          <span className="text-xs bg-indigo-900/50 text-indigo-400 border border-indigo-800 px-2 py-0.5 rounded font-medium">Auto</span>
+                          <span className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded font-medium">Auto</span>
                         )}
                         {run.toolsFound>0 && (
-                          <span className="text-xs text-emerald-400 font-semibold">{run.toolsFound} tools found</span>
+                          <span className="text-xs text-emerald-600 font-semibold">{run.toolsFound} tools found</span>
                         )}
-                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded border ${run.status==="done"?"bg-green-950 text-green-400 border-green-800":"bg-red-950 text-red-400 border-red-900"}`}>
+                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded border ${run.status==="done"?"bg-green-50 text-green-700 border-green-300":"bg-red-50 text-red-700 border-red-300"}`}>
                           {run.status}
                         </span>
                       </div>
@@ -756,19 +770,19 @@ export default function Dashboard() {
                         {Object.entries((run.params.tools_per_category as Record<string,number>)||{})
                           .filter(([,v])=>v>0)
                           .map(([cat,count])=>(
-                            <span key={cat} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{cat}: {count}</span>
+                            <span key={cat} className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded">{cat}: {count}</span>
                           ))}
                         {(run.params.platforms_filter as string[]||[]).map(p=>(
-                          <span key={p} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{p}</span>
+                          <span key={p} className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded">{p}</span>
                         ))}
                         {(run.params.pricing_filter as string[]||[]).map(p=>(
-                          <span key={p} className="text-xs bg-[#1a1f33] text-slate-400 border border-[#2d3148] px-2 py-0.5 rounded">{p}</span>
+                          <span key={p} className="text-xs bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded">{p}</span>
                         ))}
                       </div>
                     )}
                     {run.sheetUrl && (
                       <a href={run.sheetUrl} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 mt-2 text-xs text-green-400 hover:text-green-300 transition-colors">
+                        className="inline-flex items-center gap-1.5 mt-2 text-xs text-green-600 hover:text-green-700 transition-colors">
                         <ExternalLinkIcon />View in Google Sheets
                       </a>
                     )}

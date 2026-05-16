@@ -23,8 +23,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 CATEGORY_DEFINITIONS = {
     "Reading": "Tools designed to assist individuals who have difficulty reading text. This includes people with reading disabilities such as dyslexia, those with low vision who struggles to read standard text, and individuals who are blind.",
+    "Writing": "Tools designed to help individuals who have difficulty producing written text, including those with dysgraphia, motor impairments, or language processing difficulties.",
     "Cognitive": "Tools intended to support users with cognitive disabilities that affect reading, writing, memory, or comprehension. This includes individuals with dyslexia, dysgraphia, ADHD, or processing disorders.",
     "Vision": "Tools that assist individuals who are blind, have low vision, or other vision-related impairments. This category also includes tools designed to prevent seizures triggered by visual stimuli.",
+    "Braille": "Tools that provide Braille output or input support for individuals who are blind or deafblind, including Braille display drivers, translation software, and apps that interface with refreshable Braille devices.",
     "Physical": "Tools designed to help users with physical disabilities that limit their ability to interact with devices using standard input methods.",
     "Hearing": "Tools that assist individuals who are deaf or hard of hearing.",
     "Speech/ Communication": "Tools that assist individuals who are non-verbal or have difficulty speaking or forming coherent verbal communication.",
