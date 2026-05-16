@@ -377,7 +377,7 @@ def run(config: dict, log: Callable[[str], None], base_dir: Path) -> bool:
 
     (base_dir / "results").mkdir(exist_ok=True)
 
-    for category, target_count in categories_to_run.items():
+    for i, (category, target_count) in enumerate(categories_to_run.items()):
         log(f"\n  Processing category: {category} (target: {target_count})")
         iteration = 1
         more_available = True
@@ -408,6 +408,9 @@ def run(config: dict, log: Callable[[str], None], base_dir: Path) -> bool:
                 time.sleep(5)
 
         log(f"  {category}: {total_added} tools added.")
+        if i < len(categories_to_run) - 1:
+            log("  Waiting 7s before next category (RPM throttle)...")
+            time.sleep(7)
 
     log("  Step 2 complete.")
     return True

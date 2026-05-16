@@ -386,12 +386,12 @@ export default function Dashboard() {
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
           AT Tool Discovery
         </h1>
-        <p className="text-slate-500 text-sm mt-1.5">Pipeline Dashboard — configure, run, and monitor from your browser</p>
+        <p className="text-slate-600 text-sm mt-1.5">Pipeline Dashboard — configure, run, and monitor from your browser</p>
       </header>
 
       {/* ── Configure + Schedule (merged) ── */}
       <section className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl p-8 mb-5">
-        <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-widest mb-6">
+        <div className="flex items-center gap-2 text-slate-900 text-xs font-semibold uppercase tracking-widest mb-6">
           <CalendarIcon />
           Schedule a Search
         </div>
@@ -400,14 +400,14 @@ export default function Dashboard() {
           {/* Name + Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-slate-500 text-xs font-medium">Search Name</label>
+              <label className="text-slate-900 text-xs font-medium">Search Name</label>
               <input type="text" placeholder="e.g. Weekly Vision Scan" value={schedName}
                 onChange={e=>setSchedName(e.target.value)}
                 className="bg-white border border-slate-300 focus:border-indigo-500 rounded-lg text-slate-900 text-sm px-3 py-2 outline-none transition-colors placeholder:text-slate-400"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-slate-500 text-xs font-medium">Start Date</label>
+              <label className="text-slate-900 text-xs font-medium">Start Date</label>
               <input type="date" value={schedDate} onChange={e=>setSchedDate(e.target.value)}
                 className="bg-white border border-slate-300 focus:border-indigo-500 rounded-lg text-slate-900 text-sm px-3 py-2 outline-none transition-colors"
                 style={{colorScheme:"light"}}
@@ -417,9 +417,9 @@ export default function Dashboard() {
 
           {/* Categories with counts */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-500 text-xs font-medium">
+            <label className="text-slate-900 text-xs font-medium">
               Tools to find per category
-              <span className="ml-2 text-slate-400 normal-case font-normal">— set to 0 to skip a category</span>
+              <span className="ml-2 text-slate-500 normal-case font-normal">— set to 0 to skip a category</span>
             </label>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {CATEGORIES.map(cat=>(
@@ -436,14 +436,14 @@ export default function Dashboard() {
               ))}
             </div>
             <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <span className="text-slate-500 text-sm">Total tools to search for across all categories</span>
+              <span className="text-slate-700 text-sm">Total tools to search for across all categories</span>
               <span className="text-slate-900 text-xl font-bold">{schedTotal}</span>
             </div>
           </div>
 
           {/* Platforms */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-500 text-xs font-medium">Platforms <span className="ml-1 text-slate-400 normal-case font-normal">(select one or more)</span></label>
+            <label className="text-slate-900 text-xs font-medium">Platforms <span className="ml-1 text-slate-500 normal-case font-normal">(select one or more)</span></label>
             <div className="flex flex-wrap gap-2">
               {PLATFORMS.map(p=>(
                 <button key={p} type="button" onClick={()=>setSchedPlatforms(prev=>toggle(prev,p))}
@@ -456,7 +456,7 @@ export default function Dashboard() {
 
           {/* Access Type */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-500 text-xs font-medium">Access Type <span className="ml-1 text-slate-400 normal-case font-normal">(built-in OS feature, online/web-based, separately installable, or works without internet)</span></label>
+            <label className="text-slate-900 text-xs font-medium">Access Type <span className="ml-1 text-slate-500 normal-case font-normal">(built-in OS feature, online/web-based, separately installable, or works without internet)</span></label>
             <div className="flex gap-3 flex-wrap">
               {ACCESS_TYPES.map(a=>(
                 <button key={a} type="button" onClick={()=>setSchedAccessType(p=>toggle(p,a))}
@@ -482,7 +482,7 @@ export default function Dashboard() {
 
           {/* Pricing */}
           <div className="flex flex-col gap-2">
-            <label className="text-slate-500 text-xs font-medium">Pricing Filter <span className="ml-1 text-slate-400 normal-case font-normal">(leave blank for any pricing)</span></label>
+            <label className="text-slate-900 text-xs font-medium">Pricing Filter <span className="ml-1 text-slate-500 normal-case font-normal">(leave blank for any pricing)</span></label>
             <div className="flex flex-wrap gap-2">
               {PRICING_OPTIONS.map(p=>(
                 <button key={p} type="button" onClick={()=>setSchedPricing(prev=>toggle(prev,p))}
@@ -518,7 +518,7 @@ export default function Dashboard() {
 
                 {/* Frequency selector */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-slate-500 text-xs font-medium">Repeat Frequency</label>
+                  <label className="text-slate-900 text-xs font-medium">Repeat Frequency</label>
                   <div className="flex gap-3">
                     {FREQUENCIES.map(f=>(
                       <button key={f} type="button" onClick={()=>setSchedFrequency(f)}
@@ -531,7 +531,7 @@ export default function Dashboard() {
 
                 {/* Config summary */}
                 <div className="flex flex-col gap-2">
-                  <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Configuration</p>
+                  <p className="text-slate-900 text-xs font-medium uppercase tracking-wider">Configuration</p>
                   <div className="bg-white border border-slate-200 rounded-lg px-4 py-3 flex flex-col gap-2">
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">Name</span>
@@ -574,7 +574,7 @@ export default function Dashboard() {
 
                 {/* Run-now choice */}
                 <div className="flex flex-col gap-2">
-                  <p className="text-slate-500 text-xs font-medium">Would you like to run now, or wait for the scheduled time?</p>
+                  <p className="text-slate-900 text-xs font-medium">Would you like to run now, or wait for the scheduled time?</p>
                   <div className="flex gap-3">
                     <button type="button" onClick={()=>setAutoRunNow(true)}
                       className={`flex-1 py-2.5 rounded-lg text-xs font-semibold border transition-colors flex items-center justify-center gap-1.5 ${autoRunNow===true?"bg-indigo-600 border-indigo-500 text-white":"bg-white border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900"}`}>
@@ -639,7 +639,7 @@ export default function Dashboard() {
       {/* ── Scheduled searches list ── */}
       {schedules.length > 0 && (
         <section className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl p-8 mb-5">
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-widest mb-4">
+          <div className="flex items-center gap-2 text-slate-900 text-xs font-semibold uppercase tracking-widest mb-4">
             <ClockIcon />
             Saved Searches
             <span className="ml-auto bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded border border-slate-200">{schedules.length}</span>
@@ -697,7 +697,7 @@ export default function Dashboard() {
 
       {/* ── Progress card ── */}
       <section className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl p-8 mb-5">
-        <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-widest mb-6">
+        <div className="flex items-center gap-2 text-slate-900 text-xs font-semibold uppercase tracking-widest mb-6">
           <TableIcon />Pipeline Progress
         </div>
         <div className="flex items-center gap-3 mb-5">
@@ -735,7 +735,7 @@ export default function Dashboard() {
       {/* ── Run History ── */}
       {dataLoaded && (
         <section className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl p-8">
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-widest mb-4">
+          <div className="flex items-center gap-2 text-slate-900 text-xs font-semibold uppercase tracking-widest mb-4">
             <HistoryIcon />
             Run History
             {history.length>0 && <span className="ml-auto bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded border border-slate-200">{history.length}</span>}
