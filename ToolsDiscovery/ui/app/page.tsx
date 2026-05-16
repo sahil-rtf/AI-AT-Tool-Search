@@ -56,6 +56,7 @@ interface RunRecord {
   status: "done"|"error"; params: Record<string,unknown>;
   toolsFound: number; sheetUrl: string;
   source?: "manual"|"cron"; scheduleName?: string;
+  logs?: string[];
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -141,6 +142,7 @@ export default function Dashboard() {
   const [schedules, setSchedules] = useState<ScheduledSearch[]>([]);
   const [history,   setHistory]   = useState<RunRecord[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [expandedRunId, setExpandedRunId] = useState<string|null>(null);
 
   // Refs
   const logEndRef    = useRef<HTMLDivElement>(null);
@@ -438,7 +440,7 @@ export default function Dashboard() {
               ))}
             </div>
             <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <span className="text-black text-sm">Total tools to search for across all categories</span>
+              <span className="text-black text-sm">Total new tools to find in this run (across all categories)</span>
               <span className="text-black text-xl font-bold">{schedTotal}</span>
             </div>
           </div>
@@ -477,7 +479,7 @@ export default function Dashboard() {
             </div>
             {schedAccessType.includes("Works w/o internet") && (
               <p className="text-black/50 text-xs px-1">
-                ℹ Note: the &ldquo;Works w/o internet&rdquo; filter is not yet active — selecting it will not affect the search results at this time.
+                ℹ Note: the &ldquo;Works w/o internet&rdquo; filter (code: <code className="font-mono">NoInternet</code>) is not yet active — selecting it will not affect search results at this time, but will be used in a future update.
               </p>
             )}
           </div>
@@ -654,7 +656,7 @@ export default function Dashboard() {
                     <span className="text-black text-sm font-semibold truncate">{s.name}</span>
                     {s.type === "schedule"
                       ? <span className="text-xs bg-indigo-50 text-black border border-indigo-200 px-2 py-0.5 rounded font-medium">Auto</span>
-                      : <span className="text-xs bg-slate-100 text-black border border-slate-200 px-2 py-0.5 rounded font-medium">Config</span>
+                      : <span className="text-xs bg-slate-100 text-black border border-slate-200 px-2 py-0.5 rounded font-medium">Saved Search</span>
                     }
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-1">
@@ -746,7 +748,14 @@ export default function Dashboard() {
             ? <p className="text-black/40 text-sm">No runs yet. Run the pipeline to see history here.</p>
             : (
               <div className="flex flex-col gap-3">
-                {history.map(run=>(
+                {history.map(run=>{
+                  const isExpanded = expandedRunId === run.id;
+                  const hasLogs = run.logs && run.logs.length > 0;
+                  // Filter out control messages, keep display lines
+                  const displayLogs = (run.logs ?? []).filter(l =>
+                    !l.startsWith("STATUS:") && !l.startsWith("SHEET_URL:")
+                  );
+                  return (
                   <div key={run.id} className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex items-center gap-2">
@@ -764,6 +773,14 @@ export default function Dashboard() {
                         <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded border ${run.status==="done"?"bg-green-50 text-green-700 border-green-300":"bg-red-50 text-red-700 border-red-300"}`}>
                           {run.status}
                         </span>
+                        {hasLogs && (
+                          <button
+                            onClick={()=>setExpandedRunId(isExpanded ? null : run.id)}
+                            className="text-xs text-black/50 hover:text-black transition-colors flex items-center gap-1">
+                            <ChevronIcon expanded={isExpanded} />
+                            {isExpanded ? "Hide logs" : "Show logs"}
+                          </button>
+                        )}
                       </div>
                     </div>
                     {/* Search params summary */}
@@ -788,8 +805,17 @@ export default function Dashboard() {
                         <ExternalLinkIcon />View in Google Sheets
                       </a>
                     )}
+                    {/* Collapsible log panel */}
+                    {isExpanded && (
+                      <div className="mt-3 bg-white border border-slate-200 rounded-lg p-3 h-64 overflow-y-auto font-mono text-xs leading-relaxed">
+                        {displayLogs.map((line, i) => (
+                          <div key={i} className={logColor[classifyLog(line)]}>{line}</div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )
           }
@@ -869,6 +895,14 @@ function BookmarkIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+    </svg>
+  );
+}
+function ChevronIcon({expanded}:{expanded:boolean}) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+      style={{transform: expanded ? "rotate(180deg)" : "rotate(0deg)", transition:"transform 0.15s"}}>
+      <polyline points="6 9 12 15 18 9"/>
     </svg>
   );
 }
