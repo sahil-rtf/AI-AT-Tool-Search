@@ -261,6 +261,8 @@ export default function Dashboard() {
     if (!schedName.trim())           return "Please enter a search name.";
     if (schedTotal === 0)            return "Enter at least one category count greater than 0.";
     if (schedPlatforms.length===0)   return "Select at least one platform.";
+    const duplicate = schedules.some(s => s.name.trim().toLowerCase() === schedName.trim().toLowerCase());
+    if (duplicate)                   return `A search named "${schedName.trim()}" already exists. Please use a different name.`;
     return "";
   };
 
